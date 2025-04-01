@@ -1,0 +1,138 @@
+// src/pages/expenses/index.scss
+
+$primary-color: #4CAF50;
+$secondary-color: #FFC107;
+$text-color: #333;
+$light-gray: #f5f5f5;
+$border-radius: 16px;
+
+.expenses-page {
+  background-color: #f8f8f8;
+  min-height: 100vh;
+  padding: 20px;
+}
+
+.header {
+  margin-bottom: 20px;
+  
+  .title {
+    font-size: 24px;
+    font-weight: bold;
+    color: $text-color;
+    display: block;
+    margin-bottom: 10px;
+  }
+  
+  .subtitle {
+    font-size: 18px;
+    color: $primary-color;
+    font-weight: bold;
+  }
+}
+
+.expense-form {
+  background-color: white;
+  border-radius: $border-radius;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  
+  .form-group {
+    margin-bottom: 15px;
+    
+    .label {
+      display: block;
+      font-size: 16px;
+      color: $text-color;
+      margin-bottom: 8px;
+    }
+    
+    .input {
+      width: 100%;
+      height: 40px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 0 10px;
+      font-size: 16px;
+    }
+    
+    .picker-value {
+      width: 100%;
+      height: 40px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 0 10px;
+      font-size: 16px;
+      line-height: 40px;
+    }
+  }
+  
+  .submit-btn {
+    background-color: $primary-color;
+    color: white;
+    font-size: 16px;
+    margin-top: 10px;
+    border-radius: 8px;
+  }
+}
+
+.expense-list {
+  background-color: white;
+  border-radius: $border-radius;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  
+  .list-title {
+    font-size: 18px;
+    font-weight: bold;
+    color: $text-color;
+    display: block;
+    margin-bottom: 15px;
+  }
+  
+  .empty-state {
+    text-align: center;
+    padding: 20px;
+    color: #999;
+  }
+  
+  .expense-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 0;
+    border-bottom: 1px solid #eee;
+    
+    &:last-child {
+      border-bottom: none;
+    }
+    
+    .expense-details {
+      display: flex;
+      flex-direction: column;
+      
+      .expense-description {
+        font-size: 16px;
+        color: $text-color;
+        margin-bottom: 4px;
+      }
+      
+      .expense-category {
+        font-size: 12px;
+        color: #666;
+        margin-bottom: 4px;
+      }
+      
+      .expense-date {
+        font-size: 12px;
+        color: #999;
+      }
+    }
+    
+    .expense-amount {
+      font-size: 18px;
+      color: #f44336;
+      font-weight: bold;
+    }
+  }
+}

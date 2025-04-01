@@ -1,0 +1,175 @@
+// src/pages/index/index.scss
+
+// Variables
+$primary-color: #4CAF50;
+$secondary-color: #FFD700;
+$text-color: #333;
+$light-gray: #f5f5f5;
+$border-radius: 16px;
+
+.index-page {
+  background-color: #f8f8f8;
+  min-height: 100vh;
+  padding: 20px;
+  position: relative;
+  padding-bottom: 80px; // For tab bar
+}
+
+// Header Section
+.header {
+  margin-bottom: 20px;
+  
+  .greeting {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+    
+    .cup-icon {
+      width: 32px;
+      height: 32px;
+      margin-right: 10px;
+    }
+  }
+  
+  .date-display {
+    display: flex;
+    align-items: center;
+    
+    .date-number {
+      font-size: 80px;
+      font-weight: bold;
+      color: #8BC34A;
+      margin-right: 10px;
+    }
+    
+    .date-info {
+      display: flex;
+      flex-direction: column;
+      
+      .year-month {
+        font-size: 18px;
+        color: $text-color;
+      }
+      
+      .weekday {
+        font-size: 20px;
+        font-weight: bold;
+        color: $text-color;
+      }
+    }
+    
+    .emoji {
+      width: 80px;
+      height: 80px;
+      margin-left: auto;
+    }
+  }
+}
+
+// Relationship Card
+.relationship-card {
+  background-color: white;
+  border-radius: $border-radius;
+  padding: 15px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  
+  .relationship-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    
+    .avatar {
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      margin-bottom: 5px;
+    }
+    
+    .nickname {
+      font-size: 14px;
+      color: $text-color;
+    }
+  }
+  
+  .relationship-timeline {
+    flex: 1;
+    text-align: center;
+    margin: 0 10px;
+    
+    .timeline-text {
+      font-size: 14px;
+      color: $text-color;
+    }
+  }
+}
+
+// Function Grid
+.function-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 15px;
+  margin-bottom: 20px;
+  
+  .function-item {
+    background-color: white;
+    border-radius: $border-radius;
+    padding: 20px 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    
+    .function-icon {
+      width: 50px;
+      height: 50px;
+      margin-bottom: 10px;
+    }
+    
+    .function-name {
+      font-size: 14px;
+      color: $text-color;
+    }
+  }
+}
+
+// Tab Bar
+.tab-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 60px;
+  background-color: white;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
+  
+  .tab-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 5px 0;
+    
+    .tab-icon {
+      width: 24px;
+      height: 24px;
+      margin-bottom: 4px;
+    }
+    
+    .tab-text {
+      font-size: 12px;
+      color: #999;
+    }
+    
+    &.active {
+      .tab-text {
+        color: $primary-color;
+      }
+    }
+  }
+}
