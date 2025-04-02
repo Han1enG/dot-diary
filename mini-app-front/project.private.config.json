@@ -5,5 +5,5 @@
     "compileHotReLoad": true,
     "urlCheck": false
   },
-  "libVersion": "development"
+  "libVersion": "3.6.6"
 }

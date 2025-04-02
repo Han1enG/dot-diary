@@ -2,14 +2,14 @@
   "miniprogramRoot": "dist/",
   "projectname": "dot-diary",
   "description": "dot-diary",
-  "appid": "wx3ac3f653002c2ab6",
+  "appid": "wxf54465d8bfc385d7",
   "setting": {
     "urlCheck": true,
-    "es6": false,
-    "enhance": false,
+    "es6": true,
+    "enhance": true,
     "compileHotReLoad": false,
     "postcss": false,
-    "minified": true,
+    "minified": false,
     "babelSetting": {
       "ignore": [],
       "disablePlugins": [],

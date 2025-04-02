@@ -73,7 +73,7 @@ export default class Index extends Component {
         {/* Function Grid */}
         <View className='function-grid'>
           {/* First Row */}
-          <View className='function-item' onClick={() => this.navigateTo('calendar')}>
+          <View className='function-item' onClick={() => this.navigateTo('memorialDay')}>
             <Image className='function-icon' src={calendarIcon} />
             <Text className='function-name'>纪念日</Text>
           </View>
@@ -87,7 +87,7 @@ export default class Index extends Component {
           </View>
 
           {/* Second Row */}
-          <View className='function-item' onClick={() => this.navigateTo('calculator')}>
+          <View className='function-item' onClick={() => this.navigateTo('assetCostCalculator')}>
             <Image className='function-icon' src={calculatorIcon} />
             <Text className='function-name'>算成本</Text>
           </View>

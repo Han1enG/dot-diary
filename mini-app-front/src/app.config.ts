@@ -6,6 +6,8 @@ export default defineAppConfig({
     'pages/home/index',
     'pages/profile/index',
     'pages/expenses/index',
+    'pages/assetCostCalculator/index',
+    'pages/memorialDay/index',
   ],
   tabBar: {
     color: '#999',
