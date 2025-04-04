@@ -1,6 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, Input, Button } from '@tarojs/components';
+import { View, Text, Input, Button, Image, Picker } from '@tarojs/components';
 import './index.scss';
+
+// 导入图标
+import addIcon from '../../assets/icons/add.png';
+import closeIcon from '../../assets/icons/close.png';
+import editIcon from '../../assets/icons/edit.png';
+import confirmIcon from '../../assets/icons/confirm.png';
+import salaryIcon from '../../assets/icons/salary.png';
+import weekendIcon from '../../assets/icons/weekend.png';
+import birthdayIcon from '../../assets/icons/birthday.png';
+import fireworksIcon from '../../assets/icons/fireworks.png';
+import heartIcon from '../../assets/icons/heart.png';
 
 interface AnniversaryItem {
   id: string;
@@ -10,6 +21,7 @@ interface AnniversaryItem {
   weekday: string;
   color: string;
   isCompleted?: boolean;
+  icon?: string;
 }
 
 const Index: React.FC = () => {
@@ -20,15 +32,17 @@ const Index: React.FC = () => {
       date: '2024-1-25',
       days: 2,
       weekday: '星期四',
-      color: '#1e88e5'
+      color: '#FF9A8B',
+      icon: salaryIcon
     },
     {
       id: '2',
-      title: '星期六还有',
+      title: '周末还有',
       date: '2024-1-27',
       days: 4,
       weekday: '星期六',
-      color: '#1e88e5'
+      color: '#4CC9F0',
+      icon: weekendIcon
     },
     {
       id: '3',
@@ -36,15 +50,17 @@ const Index: React.FC = () => {
       date: '2024-2-8',
       days: 16,
       weekday: '星期四',
-      color: '#1e88e5'
+      color: '#F72585',
+      icon: birthdayIcon
     },
     {
       id: '4',
-      title: 'New Year 还有',
+      title: '新年还有',
       date: '2025-1-1',
       days: 341,
       weekday: '星期三',
-      color: '#1e88e5'
+      color: '#7209B7',
+      icon: fireworksIcon
     },
     {
       id: '5',
@@ -52,8 +68,9 @@ const Index: React.FC = () => {
       date: '2023-12-25',
       days: 24,
       weekday: '星期六',
-      color: '#ff9800',
-      isCompleted: true
+      color: '#FFBE0B',
+      isCompleted: true,
+      icon: heartIcon
     },
     {
       id: '6',
@@ -61,8 +78,9 @@ const Index: React.FC = () => {
       date: '2023-1-23',
       days: 365,
       weekday: '星期一',
-      color: '#ff9800',
-      isCompleted: true
+      color: '#3A86FF',
+      isCompleted: true,
+      icon: heartIcon
     },
   ]);
 
@@ -82,13 +100,37 @@ const Index: React.FC = () => {
     const year = today.getFullYear();
     const month = today.getMonth() + 1;
     const day = today.getDate();
-    setCurrentDate(`${month}月${day}日`);
+    setCurrentDate(`${year}年${month}月${day}日`);
     setLunarDate('农历腊月十二');
+
+    setAnniversaries(prev => prev.map(item => {
+      const targetDate = new Date(item.date);
+      const timeDiff = targetDate.getTime() - today.getTime();
+      const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+
+      const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+      const weekday = weekdays[targetDate.getDay()];
+
+      return {
+        ...item,
+        days: item.isCompleted ? Math.abs(daysDiff) : daysDiff,
+        weekday
+      };
+    }));
   }, []);
 
   const handleAddClick = () => {
     setIsAdding(true);
   };
+
+  const handleEditClick = (id: string) => {
+    const item = anniversaries.find(item => item.id === id);
+    if (item) {
+      setEditingId(id);
+      setEditingTitle(item.title);
+      setEditingDate(item.date);
+    }
+  }
 
   const handleAddConfirm = () => {
     if (newTitle && newDate) {
@@ -96,9 +138,10 @@ const Index: React.FC = () => {
         id: Date.now().toString(),
         title: newTitle,
         date: newDate,
-        days: 0, // Calculate based on date
-        weekday: '星期一', // Calculate based on date
-        color: '#1e88e5'
+        days: 0,
+        weekday: "星期" + "日一二三四五六".charAt(new Date(newDate).getDay()),
+        color: getRandomColor(),
+        icon: getIconByTitle(newTitle)
       };
       setAnniversaries([...anniversaries, newItem]);
       setIsAdding(false);
@@ -107,96 +150,139 @@ const Index: React.FC = () => {
     }
   };
 
-  const handleAddCancel = () => {
-    setIsAdding(false);
-    setNewTitle('');
-    setNewDate('');
-  };
-
-  const handleEditClick = (id: string) => {
-    const item = anniversaries.find(a => a.id === id);
-    if (item) {
-      setEditingId(id);
-      setEditingTitle(item.title);
-      setEditingDate(item.date);
-    }
-  };
-
   const handleEditConfirm = () => {
     if (editingId && editingTitle && editingDate) {
-      setAnniversaries(anniversaries.map(item => 
-        item.id === editingId 
-          ? {...item, title: editingTitle, date: editingDate}
+      setAnniversaries(anniversaries.map(item =>
+        item.id === editingId
+          ? {
+            ...item,
+            title: editingTitle,
+            date: editingDate,
+            icon: getIconByTitle(editingTitle)
+          }
           : item
       ));
       setEditingId(null);
     }
   };
 
-  const handleEditCancel = () => {
-    setEditingId(null);
+  const getRandomColor = () => {
+    const colors = ['#FF9A8B', '#4CC9F0', '#F72585', '#7209B7', '#FFBE0B', '#3A86FF'];
+    return colors[Math.floor(Math.random() * colors.length)];
   };
 
-  const handleDeleteClick = (id: string) => {
-    setAnniversaries(anniversaries.filter(item => item.id !== id));
+  const getIconByTitle = (title: string) => {
+    if (title.includes('工资')) return salaryIcon;
+    if (title.includes('周末')) return weekendIcon;
+    if (title.includes('生日')) return birthdayIcon;
+    if (title.includes('新年')) return fireworksIcon;
+    if (title.includes('一起') || title.includes('纪念')) return heartIcon;
+    return heartIcon;
   };
 
-  // Generate pairs of cards
-  const renderCardPairs = () => {
-    const rows = [];
-    for (let i = 0; i < anniversaries.length; i += 2) {
-      rows.push(
-        <View className="card-row" key={`row-${i}`}>
-          {renderCard(anniversaries[i])}
-          {i + 1 < anniversaries.length ? renderCard(anniversaries[i + 1]) : <View className="card empty"></View>}
-        </View>
-      );
-    }
-    return rows;
-  };
-
-  // Render individual card
-  const renderCard = (item: AnniversaryItem) => {
+  const renderCardContent = (item: AnniversaryItem) => {
     if (editingId === item.id) {
       return (
-        <View className="card editing" style={{ backgroundColor: item.color }}>
-          <View className="edit-form">
-            <Text className="edit-label">标题:</Text>
-            <Input className="edit-input" value={editingTitle} onInput={e => setEditingTitle(e.detail.value)} />
-            <Text className="edit-label">日期:</Text>
-            <Input className="edit-input" value={editingDate} onInput={e => setEditingDate(e.detail.value)} />
-            <View className="button-group">
-              <Button className="confirm-btn" onClick={handleEditConfirm}>确定</Button>
-              <Button className="cancel-btn" onClick={handleEditCancel}>取消</Button>
-            </View>
+        <View className="edit-container">
+          <View className="edit-header">
+            <Text className="edit-title">编辑纪念日</Text>
+            <Image
+              className="close-icon"
+              src={closeIcon}
+              onClick={() => setEditingId(null)}
+            />
+          </View>
+
+          <View className="form-group">
+            <Text className="form-label">标题</Text>
+            <Input
+              className="form-input"
+              value={editingTitle}
+              onInput={e => setEditingTitle(e.detail.value)}
+              placeholder="输入标题"
+            />
+          </View>
+
+          <View className="form-group">
+            <Text className="form-label">日期</Text>
+            <Picker mode='date' value={editingDate} onChange={e => setEditingDate(e.detail.value)}>
+              <View className='picker-value'>{editingDate}</View>
+            </Picker>
+          </View>
+
+          <View className="button-container">
+            <Button className="confirm-button" onClick={handleEditConfirm}>
+              <Image className="button-icon" src={confirmIcon} />
+              <Text>保存</Text>
+            </Button>
           </View>
         </View>
       );
     }
 
     return (
-      <View className="card" style={{ backgroundColor: item.color }} key={item.id}>
+      <>
         <View className="card-header">
+          {item.icon && <Image className="card-icon" src={item.icon} />}
           <Text className="card-title">{item.title}</Text>
+          <Image
+            className="edit-icon"
+            src={editIcon}
+            onClick={() => handleEditClick(item.id)}
+          />
         </View>
         <View className="card-content">
           <Text className="days-number">{item.days}</Text>
+          <Text className="days-unit">{item.isCompleted ? '天' : '天后'}</Text>
         </View>
         <View className="card-footer">
-          <Text className="date-text">目标日: {item.date} {item.weekday}</Text>
+          <Text className="date-text">{item.date}</Text>
+          <Text className="weekday-text">{item.weekday}</Text>
         </View>
-      </View>
+      </>
     );
+  };
+
+  const renderCardPairs = () => {
+    return anniversaries.reduce((rows, item, index) => {
+      if (index % 2 === 0) {
+        rows.push(
+          <View className="card-row" key={`row-${index}`}>
+            <View
+              className={`card ${editingId === item.id ? 'editing' : ''}`}
+              style={{ backgroundColor: item.color }}
+            >
+              {renderCardContent(item)}
+            </View>
+            {index + 1 < anniversaries.length ? (
+              <View
+                className={`card ${editingId === anniversaries[index + 1].id ? 'editing' : ''}`}
+                style={{ backgroundColor: anniversaries[index + 1].color }}
+              >
+                {renderCardContent(anniversaries[index + 1])}
+              </View>
+            ) : (
+              <View className="card empty"></View>
+            )}
+          </View>
+        );
+      }
+      return rows;
+    }, [] as JSX.Element[]);
   };
 
   return (
     <View className="container">
       <View className="header">
-        <View className="title">Days Matter · 全部</View>
-        <View className="add-btn" onClick={handleAddClick}>
-          <Text className="icon">+</Text>
+        <Text className="header-title">期期•念念</Text>
+        <View className="add-button" onClick={handleAddClick}>
+          <Image className="add-icon" src={addIcon} />
           <Text className="add-text">添加</Text>
         </View>
+      </View>
+
+      <View className="content">
+        {renderCardPairs()}
       </View>
 
       {isAdding && (
@@ -204,32 +290,43 @@ const Index: React.FC = () => {
           <View className="modal-content">
             <View className="modal-header">
               <Text className="modal-title">添加纪念日</Text>
+              <Image
+                className="close-icon"
+                src={closeIcon}
+                onClick={() => setIsAdding(false)}
+              />
             </View>
-            <View className="modal-form">
-              <Text className="form-label">标题:</Text>
-              <Input className="form-input" value={newTitle} onInput={e => setNewTitle(e.detail.value)} />
-              <Text className="form-label">日期:</Text>
-              <Input className="form-input" value={newDate} onInput={e => setNewDate(e.detail.value)} />
+
+            <View className="form-group">
+              <Text className="form-label">标题</Text>
+              <Input
+                className="form-input"
+                value={newTitle}
+                onInput={e => setNewTitle(e.detail.value)}
+                placeholder="例如：结婚纪念日"
+              />
             </View>
-            <View className="button-group">
-              <Button className="confirm-btn" onClick={handleAddConfirm}>确定</Button>
-              <Button className="cancel-btn" onClick={handleAddCancel}>取消</Button>
+
+            <View className="form-group">
+              <Text className="form-label">日期</Text>
+              <Picker mode='date' value={newDate} onChange={e => setNewDate(e.detail.value)}>
+                <View className='picker-value'>{newDate}</View>
+              </Picker>
+            </View>
+
+            <View className="button-container">
+              <Button className="confirm-button" onClick={handleAddConfirm}>
+                <Image className="button-icon" src={confirmIcon} />
+                <Text>添加</Text>
+              </Button>
             </View>
           </View>
         </View>
       )}
 
-      <View className="content">
-        {renderCardPairs()}
-      </View>
-
       <View className="calendar-card">
-        <Text className="date-today">历史上的今天: {currentDate}</Text>
+        <Text className="date-today">{currentDate}</Text>
         <Text className="lunar-date">{lunarDate}</Text>
-      </View>
-
-      <View className="footer">
-        <Text className="no-more-text">没有更多了</Text>
       </View>
     </View>
   );
