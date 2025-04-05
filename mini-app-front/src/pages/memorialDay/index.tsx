@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, Input, Button, Image, Picker } from '@tarojs/components';
+import LunarCalendar from 'lunar-calendar';
 import './index.scss';
 
 // 导入图标
@@ -28,7 +29,7 @@ const Index: React.FC = () => {
   const [anniversaries, setAnniversaries] = useState<AnniversaryItem[]>([
     {
       id: '1',
-      title: '发工资还有',
+      title: '发工资',
       date: '2024-1-25',
       days: 2,
       weekday: '星期四',
@@ -37,7 +38,7 @@ const Index: React.FC = () => {
     },
     {
       id: '2',
-      title: '周末还有',
+      title: '周末',
       date: '2024-1-27',
       days: 4,
       weekday: '星期六',
@@ -46,7 +47,7 @@ const Index: React.FC = () => {
     },
     {
       id: '3',
-      title: '生日还有',
+      title: '生日',
       date: '2024-2-8',
       days: 16,
       weekday: '星期四',
@@ -55,7 +56,7 @@ const Index: React.FC = () => {
     },
     {
       id: '4',
-      title: '新年还有',
+      title: '新年',
       date: '2025-1-1',
       days: 341,
       weekday: '星期三',
@@ -64,22 +65,20 @@ const Index: React.FC = () => {
     },
     {
       id: '5',
-      title: '25岁已经',
+      title: '25岁',
       date: '2023-12-25',
       days: 24,
       weekday: '星期六',
       color: '#FFBE0B',
-      isCompleted: true,
       icon: heartIcon
     },
     {
       id: '6',
-      title: '在一起已经',
+      title: '在一起',
       date: '2023-1-23',
       days: 365,
       weekday: '星期一',
       color: '#3A86FF',
-      isCompleted: true,
       icon: heartIcon
     },
   ]);
@@ -97,24 +96,35 @@ const Index: React.FC = () => {
 
   useEffect(() => {
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const year = today.getFullYear();
     const month = today.getMonth() + 1;
     const day = today.getDate();
     setCurrentDate(`${year}年${month}月${day}日`);
-    setLunarDate('农历腊月十二');
+    const lunar = LunarCalendar.solarToLunar(year, month, day
+    );
+    setLunarDate(`农历${lunar.lunarYear}年${lunar.lunarMonth}月${lunar.lunarDay}`);
 
     setAnniversaries(prev => prev.map(item => {
       const targetDate = new Date(item.date);
+      targetDate.setHours(0, 0, 0, 0);
       const timeDiff = targetDate.getTime() - today.getTime();
       const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
 
       const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
       const weekday = weekdays[targetDate.getDay()];
 
+      // 根据日期是否过去来决定标题和天数
+      const isPast = daysDiff < 0;
+      const displayDays = Math.abs(daysDiff);
+      const displayTitle = isPast ? `${item.title}已经` : `距离${item.title}还有`;
+
       return {
         ...item,
-        days: item.isCompleted ? Math.abs(daysDiff) : daysDiff,
-        weekday
+        title: displayTitle,
+        days: displayDays,
+        weekday,
+        isCompleted: isPast
       };
     }));
   }, []);
@@ -126,23 +136,46 @@ const Index: React.FC = () => {
   const handleEditClick = (id: string) => {
     const item = anniversaries.find(item => item.id === id);
     if (item) {
+      // 提取原始标题（去掉"已经"或"距离...还有"）
+      let originalTitle = item.title;
+      if (item.title.startsWith('距离')) {
+        originalTitle = item.title.replace('距离', '').replace('还有', '');
+      } else if (item.title.endsWith('已经')) {
+        originalTitle = item.title.replace('已经', '');
+      }
+      
       setEditingId(id);
-      setEditingTitle(item.title);
+      setEditingTitle(originalTitle);
       setEditingDate(item.date);
     }
   }
 
   const handleAddConfirm = () => {
     if (newTitle && newDate) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const targetDate = new Date(newDate);
+      targetDate.setHours(0, 0, 0, 0);
+      const timeDiff = targetDate.getTime() - today.getTime();
+      const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+      const isPast = daysDiff < 0;
+      
+      const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+      const weekday = weekdays[targetDate.getDay()];
+      
+      const displayTitle = isPast ? `${newTitle}已经` : `距离${newTitle}还有`;
+
       const newItem: AnniversaryItem = {
         id: Date.now().toString(),
-        title: newTitle,
+        title: displayTitle,
         date: newDate,
-        days: 0,
-        weekday: "星期" + "日一二三四五六".charAt(new Date(newDate).getDay()),
+        days: Math.abs(daysDiff),
+        weekday: weekday,
         color: getRandomColor(),
-        icon: getIconByTitle(newTitle)
+        icon: getIconByTitle(newTitle),
+        isCompleted: isPast
       };
+      
       setAnniversaries([...anniversaries, newItem]);
       setIsAdding(false);
       setNewTitle('');
@@ -152,12 +185,28 @@ const Index: React.FC = () => {
 
   const handleEditConfirm = () => {
     if (editingId && editingTitle && editingDate) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const targetDate = new Date(editingDate);
+      targetDate.setHours(0, 0, 0, 0);
+      const timeDiff = targetDate.getTime() - today.getTime();
+      const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+      const isPast = daysDiff < 0;
+      
+      const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+      const weekday = weekdays[targetDate.getDay()];
+      
+      const displayTitle = isPast ? `${editingTitle}已经` : `距离${editingTitle}还有`;
+
       setAnniversaries(anniversaries.map(item =>
         item.id === editingId
           ? {
             ...item,
-            title: editingTitle,
+            title: displayTitle,
             date: editingDate,
+            days: Math.abs(daysDiff),
+            weekday,
+            isCompleted: isPast,
             icon: getIconByTitle(editingTitle)
           }
           : item
@@ -233,7 +282,7 @@ const Index: React.FC = () => {
         </View>
         <View className="card-content">
           <Text className="days-number">{item.days}</Text>
-          <Text className="days-unit">{item.isCompleted ? '天' : '天后'}</Text>
+          <Text className="days-unit">天</Text>
         </View>
         <View className="card-footer">
           <Text className="date-text">{item.date}</Text>

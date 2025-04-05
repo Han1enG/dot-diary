@@ -71,6 +71,9 @@ importers:
       immer:
         specifier: ^10.0.3
         version: 10.1.1
+      lunar-calendar:
+        specifier: ^0.1.4
+        version: 0.1.4
       react:
         specifier: ^18.0.0
         version: 18.3.1
@@ -5780,6 +5783,9 @@ packages:
   lru-cache@6.0.0:
     resolution: {integrity: sha512-Jo6dJ04CmSjuznwJSS3pUeWmd/H0ffTlkXXgwZi+eq1UCmqQwCh+eLsYOYCwY991i2Fah4h1BEMCx4qThGbsiA==}
     engines: {node: '>=10'}
+
+  lunar-calendar@0.1.4:
+    resolution: {integrity: sha512-5r87vbg5yg56z/jkf3A+Ur+ZggUTiJw1VATT9P7RELQgWcTNhfJ+OLkNYroSna6r65bMqyaAgapo9vRN40L75A==}
 
   magic-string@0.30.17:
     resolution: {integrity: sha512-sNPKHvyjVf7gyjwS4xGTaW/mCnF8wnjtifKBEhxfZ7E/S8tQ0rssrwGNn6q8JH/ohItJfSQp9mBtQYuTlH5QnA==}
@@ -15466,6 +15472,8 @@ snapshots:
   lru-cache@6.0.0:
     dependencies:
       yallist: 4.0.0
+
+  lunar-calendar@0.1.4: {}
 
   magic-string@0.30.17:
     dependencies:
