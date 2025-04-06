@@ -21,7 +21,7 @@
     "outDir": "lib",
     "allowSyntheticDefaultImports": true,
     "sourceMap": true,
-    "allowJs": true
+    "allowJs": true,
   },
   "include": ["./src", "./types", "./config"],
   "compileOnSave": false

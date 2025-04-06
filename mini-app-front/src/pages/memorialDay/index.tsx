@@ -1,7 +1,10 @@
 import React, { useState, useEffect } from 'react';
+import Taro from '@tarojs/taro';
 import { View, Text, Input, Button, Image, Picker } from '@tarojs/components';
 import LunarCalendar from 'lunar-calendar';
 import './index.scss';
+import { AnniversaryItem } from '@/models/anniversary';
+import { fetchAnniversaries, saveAnniversaries, getUserId } from '@/utils/cloud';
 
 // 导入图标
 import addIcon from '../../assets/icons/add.png';
@@ -14,75 +17,9 @@ import birthdayIcon from '../../assets/icons/birthday.png';
 import fireworksIcon from '../../assets/icons/fireworks.png';
 import heartIcon from '../../assets/icons/heart.png';
 
-interface AnniversaryItem {
-  id: string;
-  title: string;
-  date: string;
-  days: number;
-  weekday: string;
-  color: string;
-  isCompleted?: boolean;
-  icon?: string;
-}
-
 const Index: React.FC = () => {
-  const [anniversaries, setAnniversaries] = useState<AnniversaryItem[]>([
-    {
-      id: '1',
-      title: '发工资',
-      date: '2024-1-25',
-      days: 2,
-      weekday: '星期四',
-      color: '#FF9A8B',
-      icon: salaryIcon
-    },
-    {
-      id: '2',
-      title: '周末',
-      date: '2024-1-27',
-      days: 4,
-      weekday: '星期六',
-      color: '#4CC9F0',
-      icon: weekendIcon
-    },
-    {
-      id: '3',
-      title: '生日',
-      date: '2024-2-8',
-      days: 16,
-      weekday: '星期四',
-      color: '#F72585',
-      icon: birthdayIcon
-    },
-    {
-      id: '4',
-      title: '新年',
-      date: '2025-1-1',
-      days: 341,
-      weekday: '星期三',
-      color: '#7209B7',
-      icon: fireworksIcon
-    },
-    {
-      id: '5',
-      title: '25岁',
-      date: '2023-12-25',
-      days: 24,
-      weekday: '星期六',
-      color: '#FFBE0B',
-      icon: heartIcon
-    },
-    {
-      id: '6',
-      title: '在一起',
-      date: '2023-1-23',
-      days: 365,
-      weekday: '星期一',
-      color: '#3A86FF',
-      icon: heartIcon
-    },
-  ]);
-
+  const [anniversaries, setAnniversaries] = useState<AnniversaryItem[]>([]);
+  const [userId, setUserId] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newDate, setNewDate] = useState('');
@@ -94,27 +31,104 @@ const Index: React.FC = () => {
   const [currentDate, setCurrentDate] = useState('');
   const [lunarDate, setLunarDate] = useState('');
 
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [lastSyncTime, setLastSyncTime] = useState<string>('');
+
+  // 初始化数据
   useEffect(() => {
+    const init = async () => {
+      try {
+        const wxUserId = await getUserId();
+        setUserId(wxUserId);
+        await loadData(wxUserId);
+        updateCurrentDate();
+      } catch (err) {
+        setError('初始化失败');
+        console.error(err);
+      }
+    };
+    init();
+
+    // 设置定时同步（每5分钟）
+    const interval = setInterval(() => {
+      if (userId) syncData();
+    }, 5 * 60 * 1000);
+
+    return () => clearInterval(interval);
+  }, []);
+
+  // 下拉刷新
+  Taro.usePullDownRefresh(async () => {
+    await syncData();
+    Taro.stopPullDownRefresh();
+  });
+
+  // 加载数据
+  const loadData = async (userId: string) => {
+    try {
+      setIsLoading(true);
+      setError('');
+
+      const response = await fetchAnniversaries(userId);
+      if (response.success && response.data) {
+        setAnniversaries(updateAnniversaryData(response.data));
+      } else {
+        setError(response.error?.message || '加载数据失败');
+        // 初始化空数据
+        await saveAnniversaries(userId, []);
+        setAnniversaries([]);
+      }
+    } catch (err) {
+      setError('发生未知错误');
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 同步数据
+  const syncData = async () => {
+    Taro.showLoading({ title: '同步中...' });
+    try {
+      const response = await fetchAnniversaries(userId);
+      if (response.success && response.data) {
+        setAnniversaries(updateAnniversaryData(response.data));
+        setLastSyncTime(new Date().toLocaleString());
+        Taro.showToast({ title: '同步成功', icon: 'success' });
+      }
+    } catch (error) {
+      Taro.showToast({ title: '同步失败', icon: 'error' });
+      console.error('同步失败:', error);
+    } finally {
+      Taro.hideLoading();
+    }
+  };
+
+  // 更新当前日期
+  const updateCurrentDate = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const year = today.getFullYear();
     const month = today.getMonth() + 1;
     const day = today.getDate();
     setCurrentDate(`${year}年${month}月${day}日`);
-    const lunar = LunarCalendar.solarToLunar(year, month, day
-    );
+
+    const lunar = LunarCalendar.solarToLunar(year, month, day);
     setLunarDate(`农历${lunar.lunarYear}年${lunar.lunarMonth}月${lunar.lunarDay}`);
 
-    setAnniversaries(prev => prev.map(item => {
+    setAnniversaries(prev => updateAnniversaryData(prev));
+  };
+
+  const updateAnniversaryData = (data: AnniversaryItem[]) => {
+    return data.map(item => {
       const targetDate = new Date(item.date);
-      targetDate.setHours(0, 0, 0, 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
       const timeDiff = targetDate.getTime() - today.getTime();
       const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-
       const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
       const weekday = weekdays[targetDate.getDay()];
-
-      // 根据日期是否过去来决定标题和天数
       const isPast = daysDiff < 0;
       const displayDays = Math.abs(daysDiff);
       const displayTitle = isPast ? `${item.title}已经` : `距离${item.title}还有`;
@@ -126,32 +140,36 @@ const Index: React.FC = () => {
         weekday,
         isCompleted: isPast
       };
-    }));
-  }, []);
-
-  const handleAddClick = () => {
-    setIsAdding(true);
+    });
   };
+
+  const handleAddClick = () => setIsAdding(true);
 
   const handleEditClick = (id: string) => {
     const item = anniversaries.find(item => item.id === id);
     if (item) {
-      // 提取原始标题（去掉"已经"或"距离...还有"）
       let originalTitle = item.title;
       if (item.title.startsWith('距离')) {
         originalTitle = item.title.replace('距离', '').replace('还有', '');
       } else if (item.title.endsWith('已经')) {
         originalTitle = item.title.replace('已经', '');
       }
-      
+
       setEditingId(id);
       setEditingTitle(originalTitle);
       setEditingDate(item.date);
     }
-  }
+  };
 
-  const handleAddConfirm = () => {
-    if (newTitle && newDate) {
+  const handleAddConfirm = async () => {
+    if (!newTitle || !newDate) {
+      setError('标题和日期不能为空');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const targetDate = new Date(newDate);
@@ -159,10 +177,10 @@ const Index: React.FC = () => {
       const timeDiff = targetDate.getTime() - today.getTime();
       const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
       const isPast = daysDiff < 0;
-      
+
       const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
       const weekday = weekdays[targetDate.getDay()];
-      
+
       const displayTitle = isPast ? `${newTitle}已经` : `距离${newTitle}还有`;
 
       const newItem: AnniversaryItem = {
@@ -175,16 +193,35 @@ const Index: React.FC = () => {
         icon: getIconByTitle(newTitle),
         isCompleted: isPast
       };
-      
-      setAnniversaries([...anniversaries, newItem]);
-      setIsAdding(false);
-      setNewTitle('');
-      setNewDate('');
+
+      const updatedAnniversaries = [...anniversaries, newItem];
+      const saveResponse = await saveAnniversaries(userId, updatedAnniversaries);
+
+      if (saveResponse.success) {
+        setAnniversaries(updatedAnniversaries);
+        setIsAdding(false);
+        setNewTitle('');
+        setNewDate('');
+      } else {
+        setError(saveResponse.error?.message || '保存失败');
+      }
+    } catch (error) {
+      setError('添加纪念日失败');
+      console.error(error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const handleEditConfirm = () => {
-    if (editingId && editingTitle && editingDate) {
+  const handleEditConfirm = async () => {
+    if (!editingId || !editingTitle || !editingDate) {
+      setError('请填写完整信息');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const targetDate = new Date(editingDate);
@@ -192,13 +229,13 @@ const Index: React.FC = () => {
       const timeDiff = targetDate.getTime() - today.getTime();
       const daysDiff = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
       const isPast = daysDiff < 0;
-      
+
       const weekdays = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
       const weekday = weekdays[targetDate.getDay()];
-      
+
       const displayTitle = isPast ? `${editingTitle}已经` : `距离${editingTitle}还有`;
 
-      setAnniversaries(anniversaries.map(item =>
+      const updatedAnniversaries = anniversaries.map(item =>
         item.id === editingId
           ? {
             ...item,
@@ -210,8 +247,20 @@ const Index: React.FC = () => {
             icon: getIconByTitle(editingTitle)
           }
           : item
-      ));
-      setEditingId(null);
+      );
+
+      const saveResponse = await saveAnniversaries(userId, updatedAnniversaries);
+      if (saveResponse.success) {
+        setAnniversaries(updatedAnniversaries);
+        setEditingId(null);
+      } else {
+        setError(saveResponse.error?.message || '保存失败');
+      }
+    } catch (error) {
+      setError('更新纪念日失败');
+      console.error(error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -376,6 +425,11 @@ const Index: React.FC = () => {
       <View className="calendar-card">
         <Text className="date-today">{currentDate}</Text>
         <Text className="lunar-date">{lunarDate}</Text>
+      </View>
+
+      <View className="sync-status">
+        最后同步: {lastSyncTime || '从未同步'}
+        <Button size="mini" onClick={syncData}>手动同步</Button>
       </View>
     </View>
   );

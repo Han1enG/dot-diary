@@ -126,6 +126,9 @@ importers:
       '@types/webpack-env':
         specifier: ^1.13.6
         version: 1.18.8
+      '@types/wechat-miniprogram':
+        specifier: ^3.4.8
+        version: 3.4.8
       '@typescript-eslint/eslint-plugin':
         specifier: ^6.2.0
         version: 6.21.0(@typescript-eslint/parser@6.21.0(eslint@8.57.1)(typescript@5.8.2))(eslint@8.57.1)(typescript@5.8.2)
@@ -1945,6 +1948,9 @@ packages:
 
   '@types/webpack-env@1.18.8':
     resolution: {integrity: sha512-G9eAoJRMLjcvN4I08wB5I7YofOb/kaJNd5uoCMX+LbKXTPCF+ZIHuqTnFaK9Jz1rgs035f9JUPUhNFtqgucy/A==}
+
+  '@types/wechat-miniprogram@3.4.8':
+    resolution: {integrity: sha512-lOqddA707X3SZxVhlZNBZPzYzj7lG/ED2fF30k+aE2oT6R4wfw0Wiup2k2hGrmzYUFyJXfGs01sDCuJMhQMAdg==}
 
   '@types/ws@8.18.1':
     resolution: {integrity: sha512-ThVF6DCVhA8kUGy+aazFQ4kXQ7E1Ty7A3ypFOe0IcJV8O/M511G99AW24irKrW56Wt44yG9+ij8FaqoBGkuBXg==}
@@ -10930,6 +10936,8 @@ snapshots:
       '@types/node': 18.19.85
 
   '@types/webpack-env@1.18.8': {}
+
+  '@types/wechat-miniprogram@3.4.8': {}
 
   '@types/ws@8.18.1':
     dependencies:

@@ -1,4 +1,5 @@
 export default defineAppConfig({
+  cloud: true, // 启用云开发
   entryPagePath: 'pages/index/index',
   pages: [
     'pages/index/index',
