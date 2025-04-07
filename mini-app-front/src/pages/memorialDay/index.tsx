@@ -92,6 +92,7 @@ const Index: React.FC = () => {
     Taro.showLoading({ title: '同步中...' });
     try {
       const response = await fetchAnniversaries(userId);
+      console.log('fetchAnniversaries:', response);
       if (response.success && response.data) {
         setAnniversaries(updateAnniversaryData(response.data));
         setLastSyncTime(new Date().toLocaleString());
@@ -431,7 +432,31 @@ const Index: React.FC = () => {
         最后同步: {lastSyncTime || '从未同步'}
         <Button size="mini" onClick={syncData}>手动同步</Button>
       </View>
+
+      {isLoading && (
+        <View className="loading-overlay">
+          <View className="loading-spinner" />
+          <Text>加载中...</Text>
+        </View>
+      )}
+
+      {error && (
+        <View className="error-message">
+          <Text>{error}</Text>
+          <Button size="mini" onClick={() => setError('')}>关闭</Button>
+        </View>
+      )}
+
+      {anniversaries.length === 0 && !isAdding && !isLoading && (
+        <View className="empty-state">
+          <Image className="empty-icon" src={heartIcon} />
+          <Text className="empty-text">暂无纪念日，点击右上角添加</Text>
+        </View>
+      )}
+
     </View>
+
+
   );
 };
 
