@@ -1,37 +1,42 @@
-import cloud from 'wx-server-sdk'
+const cloud = require('wx-server-sdk')
 cloud.init()
 
 const db = cloud.database()
 
 exports.main = async (event, context) => {
   const { collection, userId, data } = event
-  
+
   try {
-    // 检查文档是否存在
-    const checkRes = await db.collection(collection).doc(userId).get()
-    
-    if (checkRes.data) {
-      // 更新文档
-      await db.collection(collection).doc(userId).update({
+    // 先尝试更新
+    const updateRes = await db.collection(collection)
+      .doc(userId)
+      .update({
         data: {
           items: data,
           updatedAt: db.serverDate()
         }
       })
-    } else {
-      // 创建新文档
-      await db.collection(collection).doc(userId).set({
+    
+    // 检查是否实际更新了文档
+    if (updateRes.stats.updated > 0) {
+      return { success: true, result: updateRes }
+    }
+    
+    // 如果没有更新任何文档，尝试设置文档
+    const setRes = await db.collection(collection)
+      .doc(userId)
+      .set({
         data: {
           items: data,
           createdAt: db.serverDate(),
           updatedAt: db.serverDate()
         }
       })
-    }
     
-    return { success: true }
+    return { success: true, result: setRes }
+    
   } catch (error) {
-    console.error('保存失败:', error)
+    console.error('操作失败:', error)
     return { success: false, error }
   }
 }

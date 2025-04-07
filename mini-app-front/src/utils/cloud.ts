@@ -45,6 +45,7 @@ export const fetchAnniversaries = async (userId: string): Promise<{success: bool
   try {
     // 先尝试从本地缓存获取
     const localData = Taro.getStorageSync(`anniversaries_${userId}`)
+    console.log('localData:', localData)
     if (localData) {
       return { success: true, data: localData }
     }
@@ -57,6 +58,8 @@ export const fetchAnniversaries = async (userId: string): Promise<{success: bool
         userId
       }
     })
+
+    console.log('getData:', result)
     
     // 保存到本地缓存
     const cloudData = (result.result as { data: any }).data

@@ -1,4 +1,4 @@
-import cloud from 'wx-server-sdk'
+const cloud = require('wx-server-sdk')
 cloud.init()
 
 const db = cloud.database()
