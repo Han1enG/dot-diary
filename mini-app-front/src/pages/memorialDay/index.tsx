@@ -352,6 +352,7 @@ const Index: React.FC = () => {
 
   return (
     <View className="container">
+      <Image className="background-image" src={"https://image.coldcoding.top/file/AgACAgQAAyEGAASUgNIDAAOiZ_VS4aNp0SV8aPOpLJ3WGFftkrsAAg_OMRuNHrFTbRV65WMqDGsBAAMCAAN3AAM2BA.jpg"} mode="aspectFill" />
       <View className="header">
         <Text className="header-title">期期•念念</Text>
         <View className="add-button" onClick={() => setIsAdding(true)}>
@@ -423,8 +424,6 @@ const Index: React.FC = () => {
       )}
 
     </View>
-
-
   );
 };
 
