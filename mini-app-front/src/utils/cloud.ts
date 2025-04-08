@@ -1,4 +1,5 @@
 import Taro from '@tarojs/taro'
+import { AnniversaryItem } from '@/models/anniversary'
 
 // 获取用户唯一ID
 export const getUserId = async (): Promise<string> => {
@@ -18,7 +19,7 @@ export const getUserId = async (): Promise<string> => {
 }
 
 // 保存纪念日数据
-export const saveAnniversaries = async (userId: string, data: any): Promise<{success: boolean, error?: any}> => {
+export const saveAnniversaries = async (userId: string, data: AnniversaryItem[]): Promise<{success: boolean, error?: any}> => {
   try {
     // 先保存到本地缓存
     Taro.setStorageSync(`anniversaries_${userId}`, data)
@@ -41,7 +42,7 @@ export const saveAnniversaries = async (userId: string, data: any): Promise<{suc
 }
 
 // 获取纪念日数据
-export const fetchAnniversaries = async (userId: string): Promise<{success: boolean, data?: any, error?: any}> => {
+export const fetchAnniversaries = async (userId: string): Promise<{success: boolean, data?: AnniversaryItem[], error?: any}> => {
   try {
     // 先尝试从本地缓存获取
     const localData = Taro.getStorageSync(`anniversaries_${userId}`)
@@ -62,7 +63,7 @@ export const fetchAnniversaries = async (userId: string): Promise<{success: bool
     console.log('getData:', result)
     
     // 保存到本地缓存
-    const cloudData = (result.result as { data: any }).data
+    const cloudData: AnniversaryItem[] = (result.result as { data: any }).data || []
     if (cloudData) {
       Taro.setStorageSync(`anniversaries_${userId}`, cloudData)
       return { success: true, data: cloudData }
