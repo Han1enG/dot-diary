@@ -1,21 +1,19 @@
 import { View, Text, Image, Picker } from '@tarojs/components';
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import './index.scss';
+import { AssetItem } from '@/models/asset';
+import { formatServiceTime, formatCurrency, enrichAssetItem } from '@/utils/assetCalculations';
+import { fetchAssetCost, saveAssetCost, getUserId } from '@/utils/cloud';
+import Taro from '@tarojs/taro';
 
-import dogIcon from '../../assets/icons/dog.png';
-import bowlIcon from '../../assets/icons/bowl-logo.png';
+// 常量定义
+const ICON_OPTIONS = [
+  'yuan-circle', 'laptop', 'air-conditioner', 'smartphone', 'home',
+  'car', 'desktop', 'electric-scooter', 'washing-machine', 'camera',
+  'headphones', 'watch', 'bicycle', 'fridge', 'microwave'
+];
 
-interface AssetItem {
-  id: string;
-  name: string;
-  icon: string;
-  price: number;
-  daysUsed: number;
-  dailyCost: number;
-  purchaseDate: string;
-  isRetired?: boolean;
-}
-
+// 接口定义
 interface EditModalProps {
   item: AssetItem | null;
   isVisible: boolean;
@@ -25,82 +23,115 @@ interface EditModalProps {
   onDelete?: (id: string) => void;
 }
 
-// 计算工具函数
-const calculateDaysUsed = (purchaseDate: string) => {
-  const purchase = new Date(purchaseDate);
-  const today = new Date();
-  const diffTime = Math.abs(today.getTime() - purchase.getTime());
-  return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+interface SummaryCardProps {
+  label: string;
+  amount: number;
+  description: string;
+}
+
+interface AssetItemCardProps {
+  item: AssetItem;
+  onClick: (item: AssetItem) => void;
+}
+
+// 拆分成小组件
+const SummaryCard: React.FC<SummaryCardProps> = ({ label, amount, description }) => (
+  <View className='summary-card'>
+    <Text className='summary-label'>{label}</Text>
+    <Text className='summary-amount'>{formatCurrency(amount)}</Text>
+    <Text className='summary-description'>{description}</Text>
+  </View>
+);
+
+const AssetItemCard: React.FC<AssetItemCardProps> = ({ item, onClick }) => {
+  const handleClick = useCallback(() => onClick(item), [item, onClick]);
+
+  return (
+    <View
+      className={`asset-item ${item.isRetired ? 'retired' : ''}`}
+      onClick={handleClick}
+    >
+      <View className='asset-icon-container'>
+        <Image className='asset-icon' src={require(`@/assets/icons/${item.icon}.png`)} />
+        {item.isRetired && <View className='retired-badge'>已退役</View>}
+      </View>
+      <Text className='asset-name'>{item.name}</Text>
+      <Text className='asset-price'>{formatCurrency(item.price)}</Text>
+      <View className='asset-daily-container'>
+        <Text className='asset-daily-cost'>{formatCurrency(item.dailyCost)}/天</Text>
+        <Text className='separator'>·</Text>
+        <Text className='asset-days'>{formatServiceTime(item.daysUsed)}</Text>
+      </View>
+      <View className='asset-purchase-info'>
+        <Text className='asset-purchase-date'>购于 {item.purchaseDate}</Text>
+      </View>
+    </View>
+  );
 };
 
-const calculateDailyCost = (price: number, daysUsed: number) => {
-  return daysUsed > 0 ? price / daysUsed : 0;
-};
+const IconSelector: React.FC<{
+  selectedIcon: string;
+  onChange: (icon: string) => void;
+}> = ({ selectedIcon, onChange }) => (
+  <View className='icon-selector'>
+    {ICON_OPTIONS.map(iconName => (
+      <View
+        key={iconName}
+        className={`icon-option ${selectedIcon === iconName ? 'selected' : ''}`}
+        onClick={() => onChange(iconName)}
+      >
+        <Image className='icon-image' src={require(`@/assets/icons/${iconName}.png`)} />
+      </View>
+    ))}
+  </View>
+);
 
-const formatServiceTime = (days: number) => {
-  const years = Math.floor(days / 365);
-  const remainingDays = days % 365;
-  if (years > 0) {
-    return `${years}年${remainingDays}天`;
+const EmptyState: React.FC<{ onAddClick: () => void }> = ({ onAddClick }) => (
+  <View className='empty-state'>
+    <Text className='empty-text'>暂无资产记录</Text>
+    <button className='btn-add-first' onClick={onAddClick}>添加第一个资产</button>
+  </View>
+);
+
+const EditModal: React.FC<EditModalProps> = ({
+  item,
+  isVisible,
+  isNew,
+  onClose,
+  onSave,
+  onDelete
+}) => {
+  const createDefaultAssetItem: AssetItem = {
+    id: String(Date.now()),
+    name: '',
+    icon: 'yuan-circle',
+    price: 0,
+    purchaseDate: new Date().toISOString().split('T')[0],
+    isRetired: false,
+    daysUsed: 0,
+    dailyCost: 0
   }
-  return `${days}天`;
-};
 
-const EditModal: React.FC<EditModalProps> = ({ item, isVisible, isNew, onClose, onSave, onDelete }) => {
   const [editedItem, setEditedItem] = useState<AssetItem>(
-    item || {
-      id: String(Date.now()),
-      name: '',
-      icon: 'yuan-circle',
-      price: 0,
-      daysUsed: 0,
-      dailyCost: 0,
-      purchaseDate: new Date().toISOString().split('T')[0]
-    }
+    item || createDefaultAssetItem
   );
 
   useEffect(() => {
     if (item) {
-      const daysUsed = calculateDaysUsed(item.purchaseDate);
-      const dailyCost = calculateDailyCost(item.price, daysUsed);
-      setEditedItem({
-        ...item,
-        daysUsed,
-        dailyCost
-      });
+      setEditedItem({ ...item });
+    } else {
+      setEditedItem(createDefaultAssetItem);
     }
-  }, [item]);
+  }, [item, isVisible]);
 
   if (!isVisible) return null;
 
   const handleChange = (field: keyof AssetItem, value: any) => {
-    const updatedItem = { ...editedItem, [field]: value };
-
-    // 如果修改了价格或购买日期，重新计算
-    if (field === 'price' || field === 'purchaseDate') {
-      const daysUsed = field === 'purchaseDate'
-        ? calculateDaysUsed(value)
-        : updatedItem.daysUsed;
-      updatedItem.daysUsed = daysUsed;
-      updatedItem.dailyCost = calculateDailyCost(
-        field === 'price' ? value : updatedItem.price,
-        daysUsed
-      );
-    }
-
-    setEditedItem(updatedItem);
+    setEditedItem(prev => ({ ...prev, [field]: value }));
   };
 
   const handleSubmit = () => {
-    // 确保保存前数据是最新的
-    const daysUsed = calculateDaysUsed(editedItem.purchaseDate);
-    const dailyCost = calculateDailyCost(editedItem.price, daysUsed);
-    const finalItem = {
-      ...editedItem,
-      daysUsed,
-      dailyCost
-    };
-    onSave(finalItem);
+    onSave(enrichAssetItem(editedItem));
   };
 
   const handleDelete = () => {
@@ -109,16 +140,10 @@ const EditModal: React.FC<EditModalProps> = ({ item, isVisible, isNew, onClose, 
     }
   };
 
-  const handleDateChange = (e) => {
+  const handleDateChange = (e: any) => {
     const { value } = e.detail;
     handleChange('purchaseDate', value);
   };
-
-  const iconOptions = [
-    'yuan-circle', 'laptop', 'air-conditioner', 'smartphone', 'home',
-    'car', 'desktop', 'electric-scooter', 'washing-machine', 'camera',
-    'headphones', 'watch', 'bicycle', 'fridge', 'microwave'
-  ];
 
   return (
     <View className='modal-overlay'>
@@ -142,21 +167,10 @@ const EditModal: React.FC<EditModalProps> = ({ item, isVisible, isNew, onClose, 
 
           <View className='form-group'>
             <Text className='form-label'>图标</Text>
-            <View className='icon-selector'>
-              {iconOptions.map(iconName => (
-                <View
-                  key={iconName}
-                  className={`icon-option ${editedItem.icon === iconName ? 'selected' : ''}`}
-                  onClick={() => handleChange('icon', iconName)}
-                >
-                  <Image
-                    className='icon-image'
-                    src={`/assets/icons/${iconName}.png`}
-                    mode='aspectFit'
-                  />
-                </View>
-              ))}
-            </View>
+            <IconSelector
+              selectedIcon={editedItem.icon}
+              onChange={(icon) => handleChange('icon', icon)}
+            />
           </View>
 
           <View className='form-group'>
@@ -175,16 +189,6 @@ const EditModal: React.FC<EditModalProps> = ({ item, isVisible, isNew, onClose, 
             <Picker mode='date' value={editedItem.purchaseDate} onChange={handleDateChange}>
               <View className='picker-value'>{editedItem.purchaseDate}</View>
             </Picker>
-          </View>
-
-          <View className='form-group'>
-            <Text className='form-label'>已使用天数</Text>
-            <Text className='form-value'>{editedItem.daysUsed}天</Text>
-          </View>
-
-          <View className='form-group'>
-            <Text className='form-label'>日均成本</Text>
-            <Text className='form-value'>¥{editedItem.dailyCost.toFixed(2)}/天</Text>
           </View>
 
           <View className='form-group checkbox-group'>
@@ -217,157 +221,158 @@ const EditModal: React.FC<EditModalProps> = ({ item, isVisible, isNew, onClose, 
 };
 
 const AssetCostCalculator: React.FC = () => {
-  const [totalAssets, setTotalAssets] = useState(0);
-  const [dailyAverage, setDailyAverage] = useState(0);
-
   const [assetItems, setAssetItems] = useState<AssetItem[]>([]);
-
-  // 初始化数据
-  useEffect(() => {
-    const initialItems = [
-      {
-        id: '1',
-        name: '车险',
-        icon: 'yuan-circle',
-        price: 2800.00,
-        purchaseDate: '2024-12-25',
-        isRetired: false
-      },
-      {
-        id: '2',
-        name: '笔记本电脑',
-        icon: 'laptop',
-        price: 5499.00,
-        purchaseDate: '2024-10-18',
-        isRetired: false
-      },
-      {
-        id: '3',
-        name: '小米空调',
-        icon: 'air-conditioner',
-        price: 1608.00,
-        purchaseDate: '2024-08-15',
-        isRetired: false
-      },
-      {
-        id: '4',
-        name: '手机',
-        icon: 'smartphone',
-        price: 2599.00,
-        purchaseDate: '2024-03-11',
-        isRetired: false
-      },
-      {
-        id: '5',
-        name: '房租每年',
-        icon: 'home',
-        price: 12000.00,
-        purchaseDate: '2024-01-01',
-        isRetired: true
-      },
-      {
-        id: '6',
-        name: '汽车',
-        icon: 'car',
-        price: 131500.00,
-        purchaseDate: '2023-12-24',
-        isRetired: false
-      },
-      {
-        id: '7',
-        name: '台式电脑',
-        icon: 'desktop',
-        price: 6499.00,
-        purchaseDate: '2022-05-10',
-        isRetired: false
-      },
-      {
-        id: '8',
-        name: '电动车',
-        icon: 'electric-scooter',
-        price: 3899.00,
-        purchaseDate: '2022-01-01',
-        isRetired: false
-      },
-      {
-        id: '9',
-        name: '洗衣机',
-        icon: 'washing-machine',
-        price: 888.00,
-        purchaseDate: '2021-11-30',
-        isRetired: false
-      },
-    ].map(item => {
-      const daysUsed = calculateDaysUsed(item.purchaseDate);
-      const dailyCost = calculateDailyCost(item.price, daysUsed);
-      return {
-        ...item,
-        daysUsed,
-        dailyCost
-      };
-    });
-
-    setAssetItems(initialItems);
-    recalculateTotals(initialItems);
-  }, []);
-
-  const recalculateTotals = (items: AssetItem[]) => {
-    const activeItems = items.filter(item => !item.isRetired);
-    const total = activeItems.reduce((sum, item) => sum + item.price, 0);
-    const daily = activeItems.reduce((sum, item) => sum + item.dailyCost, 0);
-
-    setTotalAssets(total);
-    setDailyAverage(daily);
-  };
-
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [currentItem, setCurrentItem] = useState<AssetItem | null>(null);
   const [isNewItem, setIsNewItem] = useState(false);
+  const [userId, setUserId] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
 
-  const handleAddClick = () => {
+  // 初始化数据
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const wxUserId = await getUserId();
+        setUserId(wxUserId);
+        await loadData(wxUserId);
+      } catch (err) {
+        Taro.showToast({
+          title: '初始化失败',
+          icon: 'error',
+          duration: 2000
+        });
+        console.error(err);
+      }
+    }
+    init();
+  }, []);
+
+  // 下拉刷新
+  Taro.usePullDownRefresh(async () => {
+    await syncData();
+    Taro.stopPullDownRefresh();
+  });
+
+  // 加载数据
+  const loadData = async (userId: string) => {
+    try {
+      setIsLoading(true);
+      if (!userId) {
+        throw new Error('用户ID未获取到');
+      }
+      const response = await fetchAssetCost(userId);
+      if (response.success && response.data) {
+        setAssetItems(response.data);
+      } else {
+        throw new Error(response.error?.message || '加载数据失败');
+      }
+    } catch (err) {
+      Taro.showToast({
+        title: err.message,
+        icon: 'error',
+        duration: 2000
+      });
+      console.error(err);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  // 同步数据
+  const syncData = async () => {
+    if (!userId) return;
+
+    Taro.showLoading({ title: '同步中...' });
+    try {
+      const response = await fetchAssetCost(userId);
+      if (response.success && response.data) {
+        setAssetItems(response.data);
+        Taro.showToast({ title: '同步成功', icon: 'success' });
+      } else {
+        throw new Error(response.error?.message || '同步失败');
+      }
+    } catch (error) {
+      Taro.showToast({ title: error.message, icon: 'error' });
+      console.error('同步失败:', error);
+    } finally {
+      Taro.hideLoading();
+    }
+  };
+
+  // 使用 useMemo 计算总值和均值，避免重复计算
+  const { totalAssets, dailyAverage, activeItemsCount } = useMemo(() => {
+    const activeItems = assetItems.filter(item => !item.isRetired);
+    return {
+      totalAssets: activeItems.reduce((sum, item) => sum + item.price, 0),
+      dailyAverage: activeItems.reduce((sum, item) => sum + item.dailyCost, 0),
+      activeItemsCount: activeItems.length
+    };
+  }, [assetItems]);
+
+  // 使用 useCallback 优化事件处理函数
+  const handleAddClick = useCallback(() => {
     setCurrentItem(null);
     setIsNewItem(true);
     setEditModalVisible(true);
-  };
+  }, []);
 
-  const handleItemClick = (item: AssetItem) => {
+  const handleItemClick = useCallback((item: AssetItem) => {
     setCurrentItem(item);
     setIsNewItem(false);
     setEditModalVisible(true);
-  };
+  }, []);
 
-  const handleCloseModal = () => {
+  const handleCloseModal = useCallback(() => {
     setEditModalVisible(false);
-  };
+  }, []);
 
-  const handleSaveItem = (item: AssetItem) => {
-    let updatedItems: AssetItem[];
-
-    if (isNewItem) {
-      updatedItems = [...assetItems, item];
-    } else {
-      updatedItems = assetItems.map(existingItem =>
-        existingItem.id === item.id ? item : existingItem
-      );
+  const handleSaveItem = useCallback(async (item: AssetItem) => {
+    if (!item.name) {
+      Taro.showToast({
+        title: '名称不能为空',
+        icon: 'none',
+        duration: 2000
+      });
+      return;
     }
+    try {
+      setIsLoading(true);
+      const updatedAssetItems = [...assetItems.filter(i => i.id !== item.id), item];
+      const saveResponse = await saveAssetCost(userId, updatedAssetItems);
 
-    setAssetItems(updatedItems);
-    recalculateTotals(updatedItems);
-    setEditModalVisible(false);
-  };
+      if (saveResponse.success) {
+        setAssetItems(updatedAssetItems);
+      } else {
+        Taro.showToast({
+          title: saveResponse.error?.message || '保存失败',
+          icon: 'error',
+          duration: 2000
+        });
+      }
+    } catch (error) {
+      Taro.showToast({
+        title: '添加纪念日失败',
+        icon: 'error',
+        duration: 2000
+      });
+      console.error(error);
+    } finally {
+      setIsLoading(false);
+      setEditModalVisible(false);
 
-  const handleDeleteItem = (id: string) => {
-    const updatedItems = assetItems.filter(item => item.id !== id);
-    setAssetItems(updatedItems);
-    recalculateTotals(updatedItems);
+    }
+  }, [isNewItem]);
+
+  const handleDeleteItem = useCallback((id: string) => {
+    setAssetItems(prev => prev.filter(item => item.id !== id));
     setEditModalVisible(false);
-  };
+  }, []);
 
   return (
     <View className='asset-calculator-container'>
       <View className='header'>
         <View className='logo-container'>
-          <Image className='logo' src={bowlIcon} />
+          <Image className='logo' src={require('@/assets/icons/bowl-logo.png')} />
           <Text className='app-title'>资产成本计算器</Text>
         </View>
         <View className='header-buttons'>
@@ -379,53 +384,42 @@ const AssetCostCalculator: React.FC = () => {
       </View>
 
       <View className='summary-cards'>
-        <View className='summary-card'>
-          <Text className='summary-label'>总资产</Text>
-          <Text className='summary-amount'>¥{totalAssets.toFixed(2)}</Text>
-          <Text className='summary-description'>当前资产总值</Text>
-        </View>
-        <View className='summary-card'>
-          <Text className='summary-label'>日均成本</Text>
-          <Text className='summary-amount'>¥{dailyAverage.toFixed(2)}</Text>
-          <Text className='summary-description'>每天资产折旧成本</Text>
-        </View>
+        <SummaryCard
+          label="总资产"
+          amount={totalAssets}
+          description="当前资产总值"
+        />
+        <SummaryCard
+          label="日均成本"
+          amount={dailyAverage}
+          description="每天资产折旧成本"
+        />
       </View>
 
-      <View className='assets-grid'>
-        {assetItems.map(item => (
-          <View
-            key={item.id}
-            className={`asset-item ${item.isRetired ? 'retired' : ''}`}
-            onClick={() => handleItemClick(item)}
-          >
-            <View className='asset-icon-container'>
-              <Image className='asset-icon' src={`../../assets/icons/${item.icon}.png`} />
-              {item.isRetired && <View className='retired-badge'>已退役</View>}
-            </View>
-            <Text className='asset-name'>{item.name}</Text>
-            <Text className='asset-price'>¥{item.price.toFixed(2)}</Text>
-            <View className='asset-daily-container'>
-              <Text className='asset-daily-cost'>¥{item.dailyCost.toFixed(2)}/天</Text>
-              <Text className='separator'>·</Text>
-              <Text className='asset-days'>{formatServiceTime(item.daysUsed)}</Text>
-            </View>
-            <View className='asset-purchase-info'>
-              <Text className='asset-purchase-date'>购于 {item.purchaseDate}</Text>
-            </View>
+      {assetItems.length === 0 ? (
+        <EmptyState onAddClick={handleAddClick} />
+      ) : (
+        <>
+          <View className='assets-grid'>
+            {assetItems.map(item => (
+              <AssetItemCard
+                key={item.id}
+                item={item}
+                onClick={handleItemClick}
+              />
+            ))}
           </View>
-        ))}
-      </View>
 
-      {assetItems.length === 0 && (
-        <View className='empty-state'>
-          <Text className='empty-text'>暂无资产记录</Text>
-          <button className='btn-add-first' onClick={handleAddClick}>添加第一个资产</button>
-        </View>
+          <View className='footer'>
+            <Text className='footer-text'>共 {assetItems.length} 项资产，其中活跃 {activeItemsCount} 项</Text>
+          </View>
+        </>
       )}
 
-      {assetItems.length > 0 && (
-        <View className='footer'>
-          <Text className='footer-text'>共 {assetItems.length} 项资产</Text>
+      {isLoading && (
+        <View className="loading-overlay">
+          <View className="loading-spinner" />
+          <Text>加载中...</Text>
         </View>
       )}
 
