@@ -40,7 +40,8 @@
     "test": "jest",
     "postinstall": "weapp-tw patch",
     "lint": "eslint .",
-    "lint:fix": "eslint . --fix"
+    "lint:fix": "eslint . --fix",
+    "check-assets": "node scripts/check-assets.js"
   },
   "browserslist": [
     "last 3 versions",
