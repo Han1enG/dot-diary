@@ -25,3 +25,68 @@ declare namespace NodeJS {
     TARO_APP_ID: string
   }
 }
+
+// 云相关
+declare namespace Cloud {
+  interface DataOperationResult<T> {
+    success: boolean
+    data?: T
+    error?: any
+  }
+
+  interface SaveOperationResult {
+    success: boolean
+    error?: any
+  }
+}
+
+
+// 基本类型
+declare namespace MiniProgram {
+  interface AnniversaryItem {
+    id: string;
+    title: string;  // 标题
+    date: string;   // 保存目标日期（格式：YYYY-MM-DD）
+    color: string;  // 卡片颜色
+    icon: string;   // 图标路径
+  }
+
+  interface AssetItem {
+    id: string;
+    name: string;
+    icon: string;
+    price: number;
+    daysUsed: number;
+    dailyCost: number;
+    purchaseDate: string;
+    isRetired?: boolean;
+  }
+
+  interface EditModalProps {
+    item: AssetItem | null;
+    isVisible: boolean;
+    isNew: boolean;
+    onClose: () => void;
+    onSave: (item: AssetItem) => void;
+    onDelete?: (id: string) => void;
+  }
+
+  interface SummaryCardProps {
+    label: string;
+    amount: number;
+    description: string;
+  }
+
+  interface AssetItemCardProps {
+    item: AssetItem;
+    onClick: (item: AssetItem) => void;
+  }
+
+  interface DataLoaderOptions<T> {
+    fetchHandler: (userId: string) => Promise<Cloud.DataOperationResult<T>>
+    onSuccess?: (data: T) => void
+    onError?: (error: any) => void
+    autoLoad?: boolean
+    showLoading?: boolean
+  }
+}

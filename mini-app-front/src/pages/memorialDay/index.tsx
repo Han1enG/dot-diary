@@ -3,61 +3,57 @@ import Taro from '@tarojs/taro';
 import { View, Text, Input, Button, Image, Picker } from '@tarojs/components';
 import LunarCalendar from 'lunar-calendar';
 import './index.scss';
-import { AnniversaryItem } from '@/models/anniversary';
-import { fetchAnniversaries, saveAnniversaries, getUserId } from '@/utils/cloud';
+import { anniversaryHandler, getUserId } from '@/utils/cloud';
+import { useDataLoader } from '@/hooks/useDataLoader';
+import { getRandomColor, getIconByTitle, getDisplayTitle } from '@/utils/memorialDay';
 
 // 导入图标
 import addIcon from '../../assets/icons/add.png';
 import closeIcon from '../../assets/icons/close.png';
 import editIcon from '../../assets/icons/edit.png';
 import confirmIcon from '../../assets/icons/confirm.png';
-import salaryIcon from '../../assets/icons/salary.png';
-import weekendIcon from '../../assets/icons/weekend.png';
-import birthdayIcon from '../../assets/icons/birthday.png';
-import fireworksIcon from '../../assets/icons/fireworks.png';
 import heartIcon from '../../assets/icons/heart.png';
 
 const Index: React.FC = () => {
-  const [anniversaries, setAnniversaries] = useState<AnniversaryItem[]>([]);
-  const [userId, setUserId] = useState('');
   const [isAdding, setIsAdding] = useState(false);
   const [newTitle, setNewTitle] = useState('');
   const [newDate, setNewDate] = useState('');
-
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editingTitle, setEditingTitle] = useState('');
   const [editingDate, setEditingDate] = useState('');
-
   const [currentDate, setCurrentDate] = useState('');
   const [lunarDate, setLunarDate] = useState('');
 
-  const [isLoading, setIsLoading] = useState(true);
+  // 使用自定义Hook管理数据加载
+  const {
+    data: anniversaries = [],
+    isLoading,
+    syncData,
+    setData: setAnniversaries
+  } = useDataLoader<MiniProgram.AnniversaryItem[]>({
+    fetchHandler: async (userId) => {
+      const response = await anniversaryHandler.fetch(userId);
+      return {
+        success: response.success,
+        data: response.data || [],
+        error: response.error
+      };
+    },
+    showLoading: true,
+    autoLoad: true,
+    onSuccess: (data) => console.log('纪念日数据加载成功:', data)
+  });
 
-  // 初始化数据
+  // 初始化日期信息
   useEffect(() => {
-    const init = async () => {
-      try {
-        const today = new Date();
-        const year = today.getFullYear();
-        const month = today.getMonth() + 1;
-        const day = today.getDate();
-        setCurrentDate(`${year}年${month}月${day}日`);
-        const lunar = LunarCalendar.solarToLunar(year, month, day);
-        setLunarDate(`农历${lunar.lunarYear}年${lunar.lunarMonth}月${lunar.lunarDay}`);
-
-        const wxUserId = await getUserId();
-        setUserId(wxUserId);
-        await loadData(wxUserId);
-      } catch (err) {
-        Taro.showToast({
-          title: '初始化失败',
-          icon: 'error',
-          duration: 2000
-        });
-        console.error(err);
-      }
-    };
-    init();
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth() + 1;
+    const day = today.getDate();
+    setCurrentDate(`${year}年${month}月${day}日`);
+    
+    const lunar = LunarCalendar.solarToLunar(year, month, day);
+    setLunarDate(`农历${lunar.lunarYear}年${lunar.lunarMonth}月${lunar.lunarDay}`);
   }, []);
 
   // 下拉刷新
@@ -66,60 +62,11 @@ const Index: React.FC = () => {
     Taro.stopPullDownRefresh();
   });
 
-  // 加载数据
-  const loadData = async (userId: string) => {
-    try {
-      setIsLoading(true);
-
-      if (!userId) {
-        throw new Error('用户ID未获取到');
-      }
-
-      const response = await fetchAnniversaries(userId);
-      console.log('fetchAnniversaries:', response);
-      if (response.success && response.data) {
-        setAnniversaries(response.data);
-      } else {
-        throw new Error(response.error?.message || '加载数据失败');
-      }
-    } catch (err) {
-      Taro.showToast({
-        title: err.message,
-        icon: 'error',
-        duration: 2000
-      });
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  // 同步数据
-  const syncData = async () => {
-    if (!userId) return;
-
-    Taro.showLoading({ title: '同步中...' });
-    try {
-      const response = await fetchAnniversaries(userId);
-      if (response.success && response.data) {
-        setAnniversaries(response.data);
-        Taro.showToast({ title: '同步成功', icon: 'success' });
-      } else {
-        throw new Error(response.error?.message || '同步失败');
-      }
-    } catch (error) {
-      Taro.showToast({ title: error.message, icon: 'error' });
-      console.error('同步失败:', error);
-    } finally {
-      Taro.hideLoading();
-    }
-  };
-
   const handleEditClick = (id: string) => {
     const item = anniversaries.find(item => item.id === id);
     if (item) {
       setEditingId(id);
-      setEditingTitle(item.title);  // 使用原始标题
+      setEditingTitle(item.title);
       setEditingDate(item.date);
     }
   };
@@ -136,8 +83,7 @@ const Index: React.FC = () => {
     }
 
     try {
-      setIsLoading(true);
-      const newItem: AnniversaryItem = {
+      const newItem: MiniProgram.AnniversaryItem = {
         id: Date.now().toString(),
         title: newTitle,
         date: newDate,
@@ -146,14 +92,19 @@ const Index: React.FC = () => {
       };
 
       const updatedAnniversaries = [...anniversaries, newItem];
-      const saveResponse = await saveAnniversaries(userId, updatedAnniversaries);
+      
+      // 乐观更新
+      setAnniversaries(updatedAnniversaries);
+      
+      const saveResponse = await anniversaryHandler.save(await getUserId(), updatedAnniversaries);
 
       if (saveResponse.success) {
-        setAnniversaries(updatedAnniversaries);
         setIsAdding(false);
         setNewTitle('');
         setNewDate('');
       } else {
+        // 回滚
+        setAnniversaries(anniversaries);
         Taro.showToast({
           title: saveResponse.error?.message || '保存失败',
           icon: 'error',
@@ -161,14 +112,13 @@ const Index: React.FC = () => {
         });
       }
     } catch (error) {
+      setAnniversaries(anniversaries);
       Taro.showToast({
         title: '添加纪念日失败',
         icon: 'error',
         duration: 2000
       });
       console.error(error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -184,57 +134,44 @@ const Index: React.FC = () => {
     }
 
     try {
-      setIsLoading(true);
-
       const updatedAnniversaries = anniversaries.map(item =>
         item.id === editingId
           ? {
             ...item,
-            originalTitle: editingTitle,
+            title: editingTitle,
             date: editingDate,
             icon: getIconByTitle(editingTitle)
           }
           : item
       );
 
-      const saveResponse = await saveAnniversaries(userId, updatedAnniversaries);
-      if (saveResponse.success) {
-        setAnniversaries(updatedAnniversaries);
-        setEditingId(null);
-      } else {
+      // 乐观更新
+      setAnniversaries(updatedAnniversaries);
+      
+      const saveResponse = await anniversaryHandler.save(await getUserId(), updatedAnniversaries);
+      
+      if (!saveResponse.success) {
+        // 回滚
+        setAnniversaries(anniversaries);
         Taro.showToast({
           title: saveResponse.error?.message || '保存失败',
           icon: 'error',
           duration: 2000
         });
+      } else {
+        setEditingId(null);
       }
     } catch (error) {
+      setAnniversaries(anniversaries);
       Taro.showToast({
         title: '更新纪念日失败',
         icon: 'error',
         duration: 2000
       });
       console.error(error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const getRandomColor = () => {
-    const colors = ['#FF9A8B', '#4CC9F0', '#F72585', '#7209B7', '#FFBE0B', '#3A86FF'];
-    return colors[Math.floor(Math.random() * colors.length)];
-  };
-
-  const getIconByTitle = (title: string) => {
-    if (title.includes('工资')) return salaryIcon;
-    if (title.includes('周末')) return weekendIcon;
-    if (title.includes('生日')) return birthdayIcon;
-    if (title.includes('新年')) return fireworksIcon;
-    if (title.includes('一起') || title.includes('纪念')) return heartIcon;
-    return heartIcon;
-  };
-
-  // 获取日期差和状态
   const getDateInfo = (targetDateStr: string) => {
     const targetDate = new Date(targetDateStr);
     const today = new Date();
@@ -252,14 +189,12 @@ const Index: React.FC = () => {
     return { displayDays, isPast, weekday };
   };
 
-  // 获取显示标题
-  const getDisplayTitle = (originalTitle: string, isPast: boolean) => {
-    return isPast ? `${originalTitle}已经` : `距离${originalTitle}还有`;
-  };
+ 
 
-  const renderCardContent = (item: AnniversaryItem) => {
+  const renderCardContent = (item: MiniProgram.AnniversaryItem) => {
     const { displayDays, isPast, weekday } = getDateInfo(item.date);
     const displayTitle = getDisplayTitle(item.title, isPast);
+    
     if (editingId === item.id) {
       return (
         <View className="edit-container">
@@ -352,7 +287,7 @@ const Index: React.FC = () => {
 
   return (
     <View className="container">
-      <Image className="background-image" src={"https://image.coldcoding.top/file/AgACAgQAAyEGAASUgNIDAAOiZ_VS4aNp0SV8aPOpLJ3WGFftkrsAAg_OMRuNHrFTbRV65WMqDGsBAAMCAAN3AAM2BA.jpg"} mode="aspectFill" />
+      <Image className="background-image" src={"https://image.coldcoding.top/file/AgACAgQAAyEGAASUgNIDAAOnZ_Z1ctZ9hP1vuFkbNOaPw8I3h4oAAkjKMRvy57hTbT814010-cwBAAMCAAN3AAM2BA.jpg"} mode="aspectFill" />
       <View className="header">
         <Text className="header-title">期期•念念</Text>
         <View className="add-button" onClick={() => setIsAdding(true)}>
@@ -422,7 +357,6 @@ const Index: React.FC = () => {
           <Text className="empty-text">暂无纪念日，点击右上角添加</Text>
         </View>
       )}
-
     </View>
   );
 };

@@ -1,5 +1,3 @@
-import { AssetItem } from "@/models/asset";
-
 export const calculateDaysUsed = (purchaseDate: string): number => {
     const purchase = new Date(purchaseDate);
     const today = new Date();
@@ -24,7 +22,7 @@ export const formatCurrency = (amount: number): string => {
     return `¥${amount.toFixed(2)}`;
 }
 
-export const enrichAssetItem = (item: AssetItem): AssetItem => {
+export const enrichAssetItem = (item: MiniProgram.AssetItem): MiniProgram.AssetItem => {
     const daysUsed = calculateDaysUsed(item.purchaseDate);
     const dailyCost = calculateDailyCost(item.price, daysUsed);
     return {

@@ -1,10 +1,10 @@
 import { View, Text, Image, Picker } from '@tarojs/components';
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import './index.scss';
-import { AssetItem } from '@/models/asset';
 import { formatServiceTime, formatCurrency, enrichAssetItem } from '@/utils/assetCalculations';
-import { fetchAssetCost, saveAssetCost, getUserId } from '@/utils/cloud';
+import { assetCostHandler, getUserId } from '@/utils/cloud';
 import Taro from '@tarojs/taro';
+import { useDataLoader } from '@/hooks/useDataLoader';
 
 // 常量定义
 const ICON_OPTIONS = [
@@ -13,29 +13,8 @@ const ICON_OPTIONS = [
   'headphones', 'watch', 'bicycle', 'fridge', 'microwave'
 ];
 
-// 接口定义
-interface EditModalProps {
-  item: AssetItem | null;
-  isVisible: boolean;
-  isNew: boolean;
-  onClose: () => void;
-  onSave: (item: AssetItem) => void;
-  onDelete?: (id: string) => void;
-}
-
-interface SummaryCardProps {
-  label: string;
-  amount: number;
-  description: string;
-}
-
-interface AssetItemCardProps {
-  item: AssetItem;
-  onClick: (item: AssetItem) => void;
-}
-
 // 拆分成小组件
-const SummaryCard: React.FC<SummaryCardProps> = ({ label, amount, description }) => (
+const SummaryCard: React.FC<MiniProgram.SummaryCardProps> = ({ label, amount, description }) => (
   <View className='summary-card'>
     <Text className='summary-label'>{label}</Text>
     <Text className='summary-amount'>{formatCurrency(amount)}</Text>
@@ -43,7 +22,7 @@ const SummaryCard: React.FC<SummaryCardProps> = ({ label, amount, description })
   </View>
 );
 
-const AssetItemCard: React.FC<AssetItemCardProps> = ({ item, onClick }) => {
+const AssetItemCard: React.FC<MiniProgram.AssetItemCardProps> = ({ item, onClick }) => {
   const handleClick = useCallback(() => onClick(item), [item, onClick]);
 
   return (
@@ -93,7 +72,7 @@ const EmptyState: React.FC<{ onAddClick: () => void }> = ({ onAddClick }) => (
   </View>
 );
 
-const EditModal: React.FC<EditModalProps> = ({
+const EditModal: React.FC<MiniProgram.EditModalProps> = ({
   item,
   isVisible,
   isNew,
@@ -101,7 +80,7 @@ const EditModal: React.FC<EditModalProps> = ({
   onSave,
   onDelete
 }) => {
-  const createDefaultAssetItem: AssetItem = {
+  const createDefaultAssetItem: MiniProgram.AssetItem = {
     id: String(Date.now()),
     name: '',
     icon: 'yuan-circle',
@@ -112,7 +91,7 @@ const EditModal: React.FC<EditModalProps> = ({
     dailyCost: 0
   }
 
-  const [editedItem, setEditedItem] = useState<AssetItem>(
+  const [editedItem, setEditedItem] = useState<MiniProgram.AssetItem>(
     item || createDefaultAssetItem
   );
 
@@ -126,7 +105,7 @@ const EditModal: React.FC<EditModalProps> = ({
 
   if (!isVisible) return null;
 
-  const handleChange = (field: keyof AssetItem, value: any) => {
+  const handleChange = (field: keyof MiniProgram.AssetItem, value: any) => {
     setEditedItem(prev => ({ ...prev, [field]: value }));
   };
 
@@ -221,83 +200,35 @@ const EditModal: React.FC<EditModalProps> = ({
 };
 
 const AssetCostCalculator: React.FC = () => {
-  const [assetItems, setAssetItems] = useState<AssetItem[]>([]);
   const [editModalVisible, setEditModalVisible] = useState(false);
-  const [currentItem, setCurrentItem] = useState<AssetItem | null>(null);
+  const [currentItem, setCurrentItem] = useState<MiniProgram.AssetItem | null>(null);
   const [isNewItem, setIsNewItem] = useState(false);
-  const [userId, setUserId] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
 
-  // 初始化数据
-  useEffect(() => {
-    const init = async () => {
-      try {
-        const wxUserId = await getUserId();
-        setUserId(wxUserId);
-        await loadData(wxUserId);
-      } catch (err) {
-        Taro.showToast({
-          title: '初始化失败',
-          icon: 'error',
-          duration: 2000
-        });
-        console.error(err);
-      }
-    }
-    init();
-  }, []);
+  // 使用自定义Hook管理数据加载
+  const {
+      data: assetItems = [],
+      isLoading,
+      syncData,
+      setData: setAssetItems
+    } = useDataLoader<MiniProgram.AssetItem[]>({
+      fetchHandler: async (userId) => {
+        const response = await assetCostHandler.fetch(userId);
+        return {
+          success: response.success,
+          data: response.data || [],
+          error: response.error
+        };
+      },
+      showLoading: true,
+      autoLoad: true,
+      onSuccess: (data) => console.log('资产数据加载成功:', data)
+    }); 
 
   // 下拉刷新
   Taro.usePullDownRefresh(async () => {
     await syncData();
     Taro.stopPullDownRefresh();
   });
-
-  // 加载数据
-  const loadData = async (userId: string) => {
-    try {
-      setIsLoading(true);
-      if (!userId) {
-        throw new Error('用户ID未获取到');
-      }
-      const response = await fetchAssetCost(userId);
-      if (response.success && response.data) {
-        setAssetItems(response.data);
-      } else {
-        throw new Error(response.error?.message || '加载数据失败');
-      }
-    } catch (err) {
-      Taro.showToast({
-        title: err.message,
-        icon: 'error',
-        duration: 2000
-      });
-      console.error(err);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-
-  // 同步数据
-  const syncData = async () => {
-    if (!userId) return;
-
-    Taro.showLoading({ title: '同步中...' });
-    try {
-      const response = await fetchAssetCost(userId);
-      if (response.success && response.data) {
-        setAssetItems(response.data);
-        Taro.showToast({ title: '同步成功', icon: 'success' });
-      } else {
-        throw new Error(response.error?.message || '同步失败');
-      }
-    } catch (error) {
-      Taro.showToast({ title: error.message, icon: 'error' });
-      console.error('同步失败:', error);
-    } finally {
-      Taro.hideLoading();
-    }
-  };
 
   // 使用 useMemo 计算总值和均值，避免重复计算
   const { totalAssets, dailyAverage, activeItemsCount } = useMemo(() => {
@@ -316,7 +247,7 @@ const AssetCostCalculator: React.FC = () => {
     setEditModalVisible(true);
   }, []);
 
-  const handleItemClick = useCallback((item: AssetItem) => {
+  const handleItemClick = useCallback((item: MiniProgram.AssetItem) => {
     setCurrentItem(item);
     setIsNewItem(false);
     setEditModalVisible(true);
@@ -326,7 +257,7 @@ const AssetCostCalculator: React.FC = () => {
     setEditModalVisible(false);
   }, []);
 
-  const handleSaveItem = useCallback(async (item: AssetItem) => {
+  const handleSaveItem = useCallback(async (item: MiniProgram.AssetItem) => {
     if (!item.name) {
       Taro.showToast({
         title: '名称不能为空',
@@ -336,9 +267,8 @@ const AssetCostCalculator: React.FC = () => {
       return;
     }
     try {
-      setIsLoading(true);
       const updatedAssetItems = [...assetItems.filter(i => i.id !== item.id), item];
-      const saveResponse = await saveAssetCost(userId, updatedAssetItems);
+      const saveResponse = await assetCostHandler.save(await getUserId(), updatedAssetItems);
 
       if (saveResponse.success) {
         setAssetItems(updatedAssetItems);
@@ -357,9 +287,7 @@ const AssetCostCalculator: React.FC = () => {
       });
       console.error(error);
     } finally {
-      setIsLoading(false);
       setEditModalVisible(false);
-
     }
   }, [isNewItem]);
 
