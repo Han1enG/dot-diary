@@ -35,4 +35,5 @@ export default defineAppConfig({
     navigationBarTitleText: '点滴',
     navigationBarTextStyle: 'black'
   },
+  lazyCodeLoading: 'requiredComponents', // 按需引入，降低小程序的启动时间和运行时内存
 })
