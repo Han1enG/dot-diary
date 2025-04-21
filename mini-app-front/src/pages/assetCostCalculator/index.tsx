@@ -268,11 +268,29 @@ const AssetCostCalculator: React.FC = () => {
       return;
     }
     try {
-      const updatedAssetItems = [...assetItems.filter(i => i.id !== item.id), item];
-      const saveResponse = await assetCostHandler.save(await getUserId(), updatedAssetItems);
+      // 正确处理数据更新
+      let updatedAssetItems: MiniProgram.AssetItem[] = [];
+
+      if (isNewItem) {
+        // 如果是新项目，添加到数组
+        updatedAssetItems = [...assetItems, item];
+      } else {
+        // 如果是编辑，替换原有项
+        updatedAssetItems = assetItems.map(i => i.id === item.id ? item : i);
+      }
+
+      // 保存到云端
+      const userId = await getUserId();
+      const saveResponse = await assetCostHandler.save(userId, updatedAssetItems);
 
       if (saveResponse.success) {
-        setAssetItems(updatedAssetItems);
+        // 保存成功后重新获取数据，确保数据同步
+        await syncData();
+        Taro.showToast({
+          title: isNewItem ? '添加成功' : '更新成功',
+          icon: 'success',
+          duration: 2000
+        });
       } else {
         Taro.showToast({
           title: saveResponse.error?.message || '保存失败',
@@ -282,7 +300,7 @@ const AssetCostCalculator: React.FC = () => {
       }
     } catch (error) {
       Taro.showToast({
-        title: '添加纪念日失败',
+        title: '保存资产失败',
         icon: 'error',
         duration: 2000
       });
@@ -290,12 +308,39 @@ const AssetCostCalculator: React.FC = () => {
     } finally {
       setEditModalVisible(false);
     }
-  }, [isNewItem]);
+  }, [assetItems, isNewItem, syncData]);
 
-  const handleDeleteItem = useCallback((id: string) => {
-    setAssetItems(prev => prev.filter(item => item.id !== id));
-    setEditModalVisible(false);
-  }, []);
+  const handleDeleteItem = useCallback(async (id: string) => {
+    try {
+      const updatedAssetItems = assetItems.filter(item => item.id !== id);
+      const userId = await getUserId();
+      const saveResponse = await assetCostHandler.save(userId, updatedAssetItems);
+
+      if (saveResponse.success) {
+        setAssetItems(updatedAssetItems);
+        Taro.showToast({
+          title: '删除成功',
+          icon: 'success',
+          duration: 2000
+        });
+      } else {
+        Taro.showToast({
+          title: saveResponse.error?.message || '删除失败',
+          icon: 'error',
+          duration: 2000
+        });
+      }
+    } catch (error) {
+      console.error(error);
+      Taro.showToast({
+        title: '删除资产失败',
+        icon: 'error',
+        duration: 2000
+      });
+    } finally {
+      setEditModalVisible(false);
+    }
+  }, [assetItems]);
 
   return (
     <View className='asset-calculator-container'>
