@@ -1,4 +1,5 @@
 import Taro from '@tarojs/taro'
+import { COMMON_ID, SHARED_GROUP } from './const.value'
 
 // 获取用户唯一ID
 export const getUserId = async (): Promise<string> => {
@@ -13,6 +14,10 @@ export const getUserId = async (): Promise<string> => {
   })
 
   userId = (loginRes.result as { openid: string }).openid || `user_${Date.now()}`
+  // TODO: 临时方案：直接使用固定数组解实现数据共享
+  if (SHARED_GROUP.includes(userId)) {
+    userId = COMMON_ID
+  }
   Taro.setStorageSync('user_id', userId)
   return userId
 }
@@ -96,7 +101,7 @@ const _fetchData = async <T>(
  */
 interface DataHandler<T> {
   save: (userId: string, data: T) => Promise<Cloud.SaveOperationResult>
-  fetch: (userId: string) => Promise<Cloud.DataOperationResult<T>>
+  fetch: (userId: string ) => Promise<Cloud.DataOperationResult<T>>
   // ... 其他方法
   // update?: (userId: string, id: string, data: Partial<T>) => Promise<Cloud.SaveOperationResult>
   // delete?: (userId: string, id: string) => Promise<Cloud.SaveOperationResult>
@@ -113,7 +118,7 @@ export const createDataHandler = <T>(collection: string, localKeyPrefix: string)
     save: (userId: string, data: T) =>
       _saveData<T>(collection, userId, data, `${localKeyPrefix}_${userId}`),
     fetch: (userId: string) =>
-      _fetchData<T>(collection, userId, `${localKeyPrefix}_${userId}`)
+      _fetchData<T>(collection, userId, `${localKeyPrefix}_${userId}`, { forceRefresh: true }),
   }
 }
 

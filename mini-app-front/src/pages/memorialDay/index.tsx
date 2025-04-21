@@ -51,7 +51,7 @@ const Index: React.FC = () => {
     const month = today.getMonth() + 1;
     const day = today.getDate();
     setCurrentDate(`${year}年${month}月${day}日`);
-    
+
     const lunar = LunarCalendar.solarToLunar(year, month, day);
     setLunarDate(`农历${lunar.lunarYear}年${lunar.lunarMonth}月${lunar.lunarDay}`);
   }, []);
@@ -92,10 +92,10 @@ const Index: React.FC = () => {
       };
 
       const updatedAnniversaries = [...anniversaries, newItem];
-      
+
       // 乐观更新
       setAnniversaries(updatedAnniversaries);
-      
+
       const saveResponse = await anniversaryHandler.save(await getUserId(), updatedAnniversaries);
 
       if (saveResponse.success) {
@@ -147,9 +147,9 @@ const Index: React.FC = () => {
 
       // 乐观更新
       setAnniversaries(updatedAnniversaries);
-      
+
       const saveResponse = await anniversaryHandler.save(await getUserId(), updatedAnniversaries);
-      
+
       if (!saveResponse.success) {
         // 回滚
         setAnniversaries(anniversaries);
@@ -189,12 +189,12 @@ const Index: React.FC = () => {
     return { displayDays, isPast, weekday };
   };
 
- 
+
 
   const renderCardContent = (item: MiniProgram.AnniversaryItem) => {
     const { displayDays, isPast, weekday } = getDateInfo(item.date);
     const displayTitle = getDisplayTitle(item.title, isPast);
-    
+
     if (editingId === item.id) {
       return (
         <View className="edit-container">

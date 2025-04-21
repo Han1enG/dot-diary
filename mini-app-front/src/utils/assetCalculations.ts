@@ -25,8 +25,10 @@ export const formatCurrency = (amount: number): string => {
 export const enrichAssetItem = (item: MiniProgram.AssetItem): MiniProgram.AssetItem => {
     const daysUsed = calculateDaysUsed(item.purchaseDate);
     const dailyCost = calculateDailyCost(item.price, daysUsed);
+    const price = Number(item.price) || 0;
     return {
         ...item,
+        price,
         daysUsed,
         dailyCost
     };

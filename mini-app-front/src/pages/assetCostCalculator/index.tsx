@@ -156,9 +156,10 @@ const EditModal: React.FC<MiniProgram.EditModalProps> = ({
             <Text className='form-label'>价格 (¥)</Text>
             <input
               className='form-input'
-              type='number'
-              value={editedItem.price || ''}
-              onChange={(e) => handleChange('price', Number(e.target.value) || 0)}
+              type='text'
+              inputMode='decimal'  // 移动设备显示数字键盘
+              value={editedItem.price?.toString() || ''}
+              onChange={(e) => handleChange('price', e.target.value)}
               placeholder='0.00'
             />
           </View>
@@ -206,23 +207,23 @@ const AssetCostCalculator: React.FC = () => {
 
   // 使用自定义Hook管理数据加载
   const {
-      data: assetItems = [],
-      isLoading,
-      syncData,
-      setData: setAssetItems
-    } = useDataLoader<MiniProgram.AssetItem[]>({
-      fetchHandler: async (userId) => {
-        const response = await assetCostHandler.fetch(userId);
-        return {
-          success: response.success,
-          data: response.data || [],
-          error: response.error
-        };
-      },
-      showLoading: true,
-      autoLoad: true,
-      onSuccess: (data) => console.log('资产数据加载成功:', data)
-    }); 
+    data: assetItems = [],
+    isLoading,
+    syncData,
+    setData: setAssetItems
+  } = useDataLoader<MiniProgram.AssetItem[]>({
+    fetchHandler: async (userId) => {
+      const response = await assetCostHandler.fetch(userId);
+      return {
+        success: response.success,
+        data: response.data || [],
+        error: response.error
+      };
+    },
+    showLoading: true,
+    autoLoad: true,
+    onSuccess: (data) => console.log('资产数据加载成功:', data)
+  });
 
   // 下拉刷新
   Taro.usePullDownRefresh(async () => {
@@ -303,11 +304,9 @@ const AssetCostCalculator: React.FC = () => {
           <Image className='logo' src={require('@/assets/icons/bowl-logo.png')} />
           <Text className='app-title'>资产成本计算器</Text>
         </View>
-        <View className='header-buttons'>
-          <View className='add-button' onClick={handleAddClick}>
-            <Text className='add-icon'>+</Text>
-            <Text className='add-text'>添加资产</Text>
-          </View>
+        <View className='add-button' onClick={handleAddClick}>
+          <Text className='add-icon'>+</Text>
+          <Text className='add-text'>添加资产</Text>
         </View>
       </View>
 

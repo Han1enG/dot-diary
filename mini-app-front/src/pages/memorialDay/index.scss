@@ -2,6 +2,9 @@
 $primary-color: #ff6b6b;
 $secondary-color: #6190e8;
 $text-color: #333;
+$text-color-dark: #2c3e50;
+$text-color-medium: #5d6d7e;
+$text-color-light: #95a5a6;
 $light-text: #666;
 $border-color: #eee;
 $background-color: #f8f9fa;
@@ -16,7 +19,8 @@ $breakpoint-tablet: 768px;
   box-sizing: border-box;
   position: relative;
   width: 100%;
-  height: 100vh; /* 视口高度 */
+  height: 100vh;
+  /* 视口高度 */
   overflow: hidden;
 
   .background-image {
@@ -25,7 +29,8 @@ $breakpoint-tablet: 768px;
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: -1; /* 确保背景在内容下方 */
+    z-index: -1;
+    /* 确保背景在内容下方 */
   }
 
   @media (max-width: $breakpoint-mobile) {
@@ -120,23 +125,26 @@ $breakpoint-tablet: 768px;
 .card-header {
   display: flex;
   align-items: center;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 
   .card-icon {
-    width: 20px;
-    height: 20px;
-    margin-right: 8px;
+    width: 24px;
+    height: 24px;
+    margin-right: 10px;
   }
 
   .card-title {
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 18px;
+    font-weight: 600;
     flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .edit-icon {
-    width: 16px;
-    height: 16px;
+    width: 30px;
+    height: 30px;
     opacity: 0.8;
     transition: opacity 0.2s ease;
 
@@ -149,18 +157,20 @@ $breakpoint-tablet: 768px;
 .card-content {
   display: flex;
   align-items: flex-end;
-  margin-bottom: 12px;
+  margin-bottom: 16px;
 
   .days-number {
-    font-size: 32px;
+    font-size: 42px;
     font-weight: 700;
     line-height: 1;
-    margin-right: 4px;
+    margin-right: 8px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
 
   .days-unit {
-    font-size: 14px;
-    margin-bottom: 6px;
+    font-size: 18px;
+    margin-bottom: 8px;
+    font-weight: 500;
   }
 }
 
@@ -170,8 +180,9 @@ $breakpoint-tablet: 768px;
 
   .date-text,
   .weekday-text {
-    font-size: 12px;
+    font-size: 14px;
     opacity: 0.9;
+    font-weight: 500;
   }
 }
 
@@ -193,8 +204,9 @@ $breakpoint-tablet: 768px;
     }
 
     .close-icon {
-      width: 20px;
-      height: 20px;
+      width: 30px;
+      height: 30px;
+      padding: 4px;
     }
   }
 
@@ -276,16 +288,24 @@ $breakpoint-tablet: 768px;
 
 /* Calendar Card */
 .calendar-card {
-  background-color: #fff;
-  border-radius: 16px;
-  padding: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 20px;
+  padding: 20px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
   text-align: center;
+  margin-bottom: 24px;
 
-  .date-today, .lunar-date {
+  .date-today {
+    font-size: 20px;
+    font-weight: 700;
+    color: $text-color-dark;
+    margin: 4px;
+  }
+
+  .lunar-date {
     font-size: 16px;
     font-weight: 500;
-    color: #333;
+    color: $text-color-medium;
     margin: 4px;
   }
 }
@@ -314,7 +334,7 @@ $breakpoint-tablet: 768px;
   justify-content: center;
   align-items: center;
   z-index: 1000;
-  
+
   .loading-spinner {
     width: 40px;
     height: 40px;
@@ -327,20 +347,22 @@ $breakpoint-tablet: 768px;
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .empty-state {
   text-align: center;
   padding: 40px 20px;
-  
+
   .empty-icon {
     width: 60px;
     height: 60px;
     opacity: 0.3;
     margin-bottom: 16px;
   }
-  
+
   .empty-text {
     color: $light-text;
     font-size: 16px;
@@ -352,8 +374,9 @@ $breakpoint-tablet: 768px;
   .card {
     border: 2px solid #000;
   }
-  
-  .form-input, .picker-value {
+
+  .form-input,
+  .picker-value {
     border: 2px solid #000;
   }
 }
@@ -363,16 +386,16 @@ $breakpoint-tablet: 768px;
   .card-row {
     flex-direction: column;
   }
-  
+
   .card {
     width: 100%;
     margin-bottom: 12px;
-    
+
     &:last-child {
       margin-bottom: 0;
     }
   }
-  
+
   .header-title {
     font-size: 20px;
   }
