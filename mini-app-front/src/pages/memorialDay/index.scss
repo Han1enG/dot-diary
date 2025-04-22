@@ -53,34 +53,41 @@ $breakpoint-tablet: 768px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  padding: $spacing-unit; // 使用变量保持一致性
+  background-color: white;
+  margin-bottom: 10px; // 添加底部间距
 
-  .header-title {
-    font-size: 24px;
-    font-weight: 600;
-    color: #333;
+  .logo-container {
+    display: flex;
+    align-items: center;
+
+    .logo {
+      width: 36px; // 增加logo尺寸
+      height: 36px;
+      margin-right: 12px;
+    }
+
+    .app-title {
+      font-size: 22px; // 增加标题字体大小
+      font-weight: bold;
+    }
   }
 
   .add-button {
     display: flex;
     align-items: center;
-    padding: 8px 12px;
-    background-color: #ff6b6b;
-    border-radius: 20px;
-
-    &:hover {
-      background-color: darken($primary-color, 10%);
-    }
+    padding: 10px 16px; // 增加按钮内部padding
+    background-color: #1890ff;
+    color: white;
+    border-radius: $border-radius;
 
     .add-icon {
-      width: 16px;
-      height: 16px;
-      margin-right: 4px;
+      font-size: 20px; // 增加加号图标大小
+      margin-right: 8px;
     }
 
     .add-text {
-      font-size: 14px;
-      color: #fff;
+      font-size: 16px; // 增加按钮文字大小
     }
   }
 }

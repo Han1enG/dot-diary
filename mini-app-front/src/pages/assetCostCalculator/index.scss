@@ -1,41 +1,42 @@
-// 基础变量
-$base-font-size: 16px;
+// 基础变量 - 增加字体大小和间距
+$base-font-size: 18px;  // 从16px增加到18px
 $primary-color: #1890ff;
-$border-radius: 12px;
-$spacing-unit: 15px;
+$border-radius: 14px;   // 稍微增加圆角
+$spacing-unit: 20px;    // 从15px增加到20px
 
 // 重置基础样式
 page {
   font-size: $base-font-size;
-  line-height: 1.5;
+  line-height: 1.6;     // 增加行高以提高可读性
   background-color: #f5f5f5;
 }
 
 // 容器样式
 .asset-calculator-container {
   min-height: 100vh;
-  padding-bottom: 50px;
+  padding-bottom: 60px;  // 增加底部padding
   background-color: #f5f5f5;
 
   .header {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 15px;
+    padding: $spacing-unit;  // 使用变量保持一致性
     background-color: white;
+    margin-bottom: 10px;     // 添加底部间距
 
     .logo-container {
       display: flex;
       align-items: center;
 
       .logo {
-        width: 30px;
-        height: 30px;
-        margin-right: 10px;
+        width: 36px;         // 增加logo尺寸
+        height: 36px;
+        margin-right: 12px;
       }
 
       .app-title {
-        font-size: 18px;
+        font-size: 22px;     // 增加标题字体大小
         font-weight: bold;
       }
     }
@@ -43,48 +44,49 @@ page {
     .add-button {
       display: flex;
       align-items: center;
-      padding: 8px 12px;
+      padding: 10px 16px;    // 增加按钮内部padding
       background-color: #1890ff;
       color: white;
-      border-radius: 12px;
+      border-radius: $border-radius;
 
       .add-icon {
-        font-size: 16px;
-        margin-right: 5px;
+        font-size: 20px;     // 增加加号图标大小
+        margin-right: 8px;
       }
 
       .add-text {
-        font-size: 14px;
+        font-size: 16px;     // 增加按钮文字大小
       }
     }
   }
 
   .summary-cards {
     display: flex;
-    padding: $spacing-unit $spacing-unit 0  $spacing-unit;
+    padding: $spacing-unit $spacing-unit 0 $spacing-unit;
     gap: $spacing-unit;
+    margin-bottom: 10px;     // 添加底部间距
 
     .summary-card {
       flex: 1;
       background-color: white;
       padding: $spacing-unit;
       border-radius: $border-radius;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);  // 增强阴影效果
 
       .summary-label {
-        font-size: 14px;
+        font-size: 16px;     // 增加标签字体大小
         color: #666;
       }
 
       .summary-amount {
-        font-size: 24px;
+        font-size: 28px;     // 增加金额字体大小
         font-weight: bold;
-        margin: 8px 0;
+        margin: 12px 0;      // 增加上下margin
         color: #333;
       }
 
       .summary-description {
-        font-size: 12px;
+        font-size: 14px;     // 增加描述字体大小
         color: #999;
       }
     }
@@ -96,11 +98,15 @@ page {
     gap: $spacing-unit;
     padding: $spacing-unit;
 
+    @media screen and (min-width: 768px) {  // 响应式布局，大屏幕时使用两列
+      grid-template-columns: repeat(2, 1fr);
+    }
+
     .asset-item {
       background-color: white;
       padding: $spacing-unit;
       border-radius: $border-radius;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 
       &.retired {
         opacity: 0.7;
@@ -108,9 +114,9 @@ page {
 
       .asset-icon-container {
         position: relative;
-        width: 40px;
-        height: 40px;
-        margin-bottom: 10px;
+        width: 48px;           // 增加图标尺寸
+        height: 48px;
+        margin-bottom: 12px;
 
         .asset-icon {
           width: 100%;
@@ -119,42 +125,42 @@ page {
 
         .retired-badge {
           position: absolute;
-          top: -5px;
-          right: -5px;
+          top: -8px;
+          right: -8px;
           background-color: #ff4d4f;
           color: white;
-          font-size: 10px;
-          padding: 2px 5px;
-          border-radius: 10px;
+          font-size: 12px;     // 增加徽章字体大小
+          padding: 3px 8px;    // 增加徽章padding
+          border-radius: 12px;
         }
       }
 
       .asset-name {
-        font-size: 16px;
+        font-size: 20px;       // 增加名称字体大小
         font-weight: bold;
-        margin: 8px 0;
+        margin: 12px 0;        // 增加上下margin
         color: #333;
       }
 
       .asset-price {
-        font-size: 18px;
+        font-size: 22px;       // 增加价格字体大小
         font-weight: bold;
-        margin: 8px 0;
+        margin: 12px 0;
         color: $primary-color;
       }
 
       .asset-daily-container {
         display: flex;
         align-items: center;
-        margin: 8px 0;
-        font-size: 14px;
+        margin: 12px 0;
+        font-size: 16px;       // 增加字体大小
 
         .asset-daily-cost {
           color: #666;
         }
 
         .separator {
-          margin: 0 5px;
+          margin: 0 8px;       // 增加分隔符两侧空间
           color: #ccc;
         }
 
@@ -165,7 +171,7 @@ page {
 
       .asset-purchase-info {
         .asset-purchase-date {
-          font-size: 12px;
+          font-size: 14px;     // 增加购买日期字体大小
           color: #999;
         }
       }
@@ -176,7 +182,8 @@ page {
     padding: $spacing-unit;
     text-align: center;
     color: #999;
-    font-size: 14px;
+    font-size: 16px;           // 增加页脚字体大小
+    margin-top: 10px;          // 添加顶部间距
   }
 
   .empty-state {
@@ -184,21 +191,21 @@ page {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 50px $spacing-unit;
+    padding: 60px $spacing-unit;  // 增加垂直padding
 
     .empty-text {
-      font-size: 16px;
+      font-size: 18px;            // 增加空状态文字大小
       color: #666;
-      margin-bottom: 20px;
+      margin-bottom: 24px;        // 增加底部margin
     }
 
     .btn-add-first {
       background-color: $primary-color;
       color: white;
       border: none;
-      padding: 12px 24px;
+      padding: 14px 28px;         // 增加按钮padding
       border-radius: $border-radius;
-      font-size: 16px;
+      font-size: 18px;            // 增加按钮字体大小
     }
   }
 }
@@ -219,7 +226,7 @@ page {
   .modal-content {
     background-color: white;
     width: 90%;
-    max-width: 500px;
+    max-width: 540px;             // 增加最大宽度
     border-radius: $border-radius;
     overflow: hidden;
 
@@ -231,12 +238,12 @@ page {
       align-items: center;
 
       .modal-title {
-        font-size: 18px;
+        font-size: 22px;          // 增加模态框标题字体大小
         font-weight: bold;
       }
 
       .modal-close {
-        font-size: 24px;
+        font-size: 28px;          // 增加关闭按钮字体大小
         color: #999;
       }
     }
@@ -245,21 +252,21 @@ page {
       padding: $spacing-unit;
 
       .form-group {
-        margin-bottom: 20px;
+        margin-bottom: 24px;      // 增加表单组之间的间距
 
         .form-label {
           display: block;
-          margin-bottom: 8px;
-          font-size: 14px;
+          margin-bottom: 10px;    // 增加标签底部margin
+          font-size: 16px;        // 增加标签字体大小
           color: #666;
         }
 
         .form-input {
           width: 100%;
-          padding: 12px;
+          padding: 14px;          // 增加输入框padding
           border: 1px solid #ddd;
-          border-radius: 6px;
-          font-size: 16px;
+          border-radius: 8px;
+          font-size: 18px;        // 增加输入框字体大小
         }
 
         &.checkbox-group {
@@ -271,7 +278,12 @@ page {
             align-items: center;
 
             input[type="checkbox"] {
-              margin-right: 8px;
+              margin-right: 10px;  // 增加复选框右侧margin
+              transform: scale(1.2); // 增大复选框大小
+            }
+
+            .checkbox-text {
+              font-size: 16px;     // 增加复选框文字大小
             }
           }
         }
@@ -280,23 +292,23 @@ page {
       .icon-selector {
         display: grid;
         grid-template-columns: repeat(5, 1fr);
-        gap: 10px;
+        gap: 12px;                // 增加图标选择器间距
 
         .icon-option {
-          padding: 10px;
-          border-radius: 6px;
+          padding: 12px;          // 增加图标选项padding
+          border-radius: 8px;
           display: flex;
           justify-content: center;
           align-items: center;
 
           &.selected {
             background-color: #e6f7ff;
-            border: 1px solid $primary-color;
+            border: 2px solid $primary-color;  // 增加边框宽度
           }
 
           .icon-image {
-            width: 24px;
-            height: 24px;
+            width: 30px;          // 增加图标大小
+            height: 30px;
           }
         }
       }
@@ -307,12 +319,12 @@ page {
       justify-content: flex-end;
       padding: $spacing-unit;
       border-top: 1px solid #eee;
-      gap: 10px;
+      gap: 12px;                 // 增加按钮之间的间距
 
       .btn {
-        padding: 10px 20px;
-        border-radius: 6px;
-        font-size: 14px;
+        padding: 12px 24px;      // 增加按钮padding
+        border-radius: 8px;
+        font-size: 16px;         // 增加按钮字体大小
         border: none;
 
         &.btn-cancel {
@@ -350,13 +362,19 @@ page {
   z-index: 1000;
 
   .loading-spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid $primary-color;
+    width: 48px;               // 增加加载图标大小
+    height: 48px;
+    border: 5px solid #f3f3f3; // 增加边框宽度
+    border-top: 5px solid $primary-color;
     border-radius: 50%;
     animation: spin 1s linear infinite;
-    margin-bottom: 10px;
+    margin-bottom: 16px;       // 增加底部margin
+  }
+
+  // 添加加载文字样式
+  & > Text {
+    font-size: 18px;
+    color: #666;
   }
 }
 
@@ -368,4 +386,14 @@ page {
   100% {
     transform: rotate(360deg);
   }
+}
+
+// 添加日期选择器样式
+.picker-value {
+  width: 100%;
+  padding: 14px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 18px;
+  color: #333;
 }

@@ -131,7 +131,7 @@ export default class Index extends Component {
                 <Text className='weekday'>{weekday}</Text>
               </View>
             </View>
-            <Image className='emoji' src={kissIcon} />
+            <Image className='emoji' src="https://image.coldcoding.top/file/AgACAgQAAyEGAASUgNIDAAOraAewznHY_7t1510dj_nGJh4dZQQAAlDEMRuA-UBQBlVO2P2bmI4BAAMCAANtAAM2BA.jpg" />
           </View>
         </View>
 

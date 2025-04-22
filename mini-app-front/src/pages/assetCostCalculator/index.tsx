@@ -357,14 +357,14 @@ const AssetCostCalculator: React.FC = () => {
 
       <View className='summary-cards'>
         <SummaryCard
-          label="总资产"
+          label="总资产 "
           amount={totalAssets}
-          description="当前资产总值"
+          description=" 当前资产总值"
         />
         <SummaryCard
-          label="日均成本"
+          label="日均成本 "
           amount={dailyAverage}
-          description="每天资产折旧成本"
+          description=" 每天资产折旧成本"
         />
       </View>
 
